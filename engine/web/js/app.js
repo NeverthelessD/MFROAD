@@ -222,9 +222,11 @@ function totalHTML(t, ts, tc) {
 }
 
 function miniHTML(kind, t) {
-  const src = kind === 'stock'
-    ? (S.nh.configured ? '나무증권' : '전일 종가') + ` · ${t.n}종목`
-    : `업비트 · ${t.n}종목`;
+  const accts = new Set(S.pf.lots.filter((l) => l.kind === kind).map((l) => l.account));
+  const where = accts.size > 1 ? `계좌 ${accts.size}개`
+    : accts.size === 1 ? ((acctById([...accts][0]) || {}).name || '')
+    : (kind === 'stock' ? '나무증권' : '업비트');
+  const src = `${where} · ${t.n}${kind === 'stock' ? '종목' : '개'}`;
   return `<div class="card mini">
     <div class="head"><span class="title"><i class="sw ${kind}"></i>${kind === 'stock' ? '국내주식' : '코인'}</span><span class="tag">${esc(src)}</span></div>
     <div class="val"><span class="v">${won(t.value)}</span><span class="u">원</span></div>
