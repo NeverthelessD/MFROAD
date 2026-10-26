@@ -1,0 +1,6 @@
+dist/
+*.part
+.DS_Store
+node_modules/
+ci-out/
+/tmp/

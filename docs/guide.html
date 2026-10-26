@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>MFROAD 사용 가이드</title>
+<style>
+@font-face { font-family: "Plex"; src: url("../engine/web/fonts/IBMPlexSansKR-Regular.woff2"); font-weight: 400; }
+@font-face { font-family: "Plex"; src: url("../engine/web/fonts/IBMPlexSansKR-SemiBold.woff2"); font-weight: 600; }
+@font-face { font-family: "Plex"; src: url("../engine/web/fonts/IBMPlexSansKR-Bold.woff2"); font-weight: 700; }
+@font-face { font-family: "SG"; src: url("../engine/web/fonts/SpaceGrotesk-wght.woff2"); font-weight: 300 700; }
+:root { --bg:#F4F3EF; --s:#FFFFFF; --s2:#F7F6F2; --ink:#17191E; --mu:#5C616B; --line:#E3E1DB; --ac:#1F6B52; --acs:#E5F0EA; --up:#D02A3A; --down:#1F5BD0; --warn:#9A5B00; --warns:#FBF1DE; }
+* { box-sizing: border-box; }
+body { margin: 0; width: 1200px; background: var(--bg); color: var(--ink); font-family: "Plex", sans-serif; font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.wrap { padding: 52px 56px 40px; display: flex; flex-direction: column; gap: 26px; }
+.head { display: flex; align-items: center; gap: 18px; }
+.mark { width: 72px; height: 72px; border-radius: 20px; background: var(--ac); display: grid; place-items: center; }
+.mark svg { width: 48px; height: 48px; }
+.head h1 { margin: 0; font-family: "SG"; font-size: 40px; letter-spacing: .04em; line-height: 1; }
+.head p { margin: 6px 0 0; color: var(--mu); font-size: 17px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.card { background: var(--s); border: 1px solid var(--line); border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column; gap: 12px; }
+.card h2 { margin: 0; font-size: 19px; display: flex; align-items: center; gap: 10px; }
+.n { width: 30px; height: 30px; border-radius: 9px; background: var(--acs); color: var(--ac); font-family: "SG"; font-weight: 700; display: grid; place-items: center; font-size: 16px; flex: none; }
+ol, ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+b { font-weight: 600; }
+.k { display: inline-block; padding: 0 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--s2); font-size: 14px; font-weight: 600; line-height: 26px; }
+.k.p { background: var(--ac); color: #fff; border-color: var(--ac); }
+.demo { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; font-size: 14px; }
+.demo .r { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 8px; padding: 10px 14px; align-items: center; }
+.demo .r + .r { border-top: 1px dashed var(--line); }
+.demo .r.top { background: var(--s); font-weight: 600; }
+.demo .r.sub { background: var(--s2); padding-left: 34px; }
+.demo .num { font-family: "SG"; text-align: right; }
+.tag { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--s); }
+.tag.auto { color: var(--ac); background: var(--acs); border-color: var(--acs); }
+.up { color: var(--up); } .down { color: var(--down); }
+.note { background: var(--warns); border-radius: 18px; padding: 22px 26px; display: flex; flex-direction: column; gap: 8px; }
+.note h2 { margin: 0; font-size: 18px; color: var(--warn); }
+.safe { background: var(--acs); border-radius: 12px; padding: 10px 14px; font-size: 14px; }
+.foot { display: flex; justify-content: space-between; color: var(--mu); font-size: 14px; padding: 0 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <span class="mark"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="15" width="3" height="5" rx="0.8" fill="#fff" fill-opacity=".45"/><rect x="10.5" y="12.5" width="3" height="7.5" rx="0.8" fill="#fff" fill-opacity=".45"/><rect x="17" y="10" width="3" height="10" rx="0.8" fill="#fff" fill-opacity=".45"/><path d="M3 13 L8.5 8.5 L12.5 11 L20 4" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 4 H20 V9" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <div><h1>MFROAD</h1><p>My Finance ROAD · 국내주식과 코인을 한 화면에서, 지금 가격으로 · 사용 가이드</p></div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2><span class="n">1</span>설치하고 열기</h2>
+      <ol>
+        <li>받은 zip 을 풀고 <b>MFROAD.app</b> 을 <b>응용 프로그램</b> 폴더로 옮겨요. (그래야 새 버전을 알아서 받아요)</li>
+        <li>처음 열 때 경고가 뜨면 <b>시스템 설정 › 개인정보 보호 및 보안</b> 아래쪽의 <b>그래도 열기</b>를 눌러요.</li>
+        <li>창을 닫아도 MFROAD 는 Dock 에 남아요. 완전히 끄려면 <span class="k">⌘Q</span></li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2><span class="n">2</span>종목 넣기</h2>
+      <ol>
+        <li>오른쪽 위 <span class="k p">+ 종목 추가</span> → <b>국내주식</b> 또는 <b>코인</b></li>
+        <li>이름 · 코드 · 초성으로 찾아요. 예) 삼성전자, 005930, ㅅㅅㅈㅈ, BTC</li>
+        <li>어느 <b>증권사 계좌 / 거래소</b>에 있는지 고르고, <b>보유 수량</b>과 <b>평균 매수가</b>를 넣으면 끝!</li>
+        <li>넣은 기록을 고치거나 지우려면 그 줄을 눌러요.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2><span class="n">3</span>같은 종목, 여러 계좌</h2>
+      <div>나무증권 · 한국투자처럼 계좌마다 따로 넣으면 <b>합쳐서</b> 보여 주고, 줄을 누르면 <b>계좌별로 펼쳐져요</b>.</div>
+      <div class="demo">
+        <div class="r top"><span>▾ 삼성전자 <span class="tag">계좌 2개</span></span><span class="num">160주</span><span class="num">평단 63,000</span><span class="num up">+14.76%</span></div>
+        <div class="r sub"><span><span class="tag auto">나무증권</span> 자동</span><span class="num">120주</span><span class="num">61,500</span><span class="num up">+17.56%</span></div>
+        <div class="r sub"><span><span class="tag">한국투자</span></span><span class="num">40주</span><span class="num">67,500</span><span class="num up">+7.11%</span></div>
+      </div>
+      <div style="font-size:14px;color:var(--mu)">같은 계좌에 같은 종목을 더 넣으면 수량을 더하고 평균 단가를 다시 계산해요.</div>
+    </section>
+
+    <section class="card">
+      <h2><span class="n">4</span>나무증권 연결 (선택)</h2>
+      <ol>
+        <li>nhplug.com 에서 <b>API 사용신청</b> → App Key · App Secret 받기</li>
+        <li>MFROAD <b>설정</b> → 두 키를 붙여 넣고 <span class="k p">저장하고 연결</span></li>
+        <li>국내주식이 <b>실시간 시세</b>로 바뀌고, 나무증권 계좌의 주식은 <b>자동으로</b> 불러와요.</li>
+      </ol>
+      <div class="safe">🔒 키는 이 Mac 의 <b>키체인</b>에만 저장돼요. MFROAD 는 <b>조회만</b> 하고 주문은 하지 않아요.</div>
+    </section>
+  </div>
+
+  <section class="card" style="flex-direction:row;gap:28px;align-items:flex-start">
+    <div style="flex:1"><h2 style="margin-bottom:8px">화면 읽는 법</h2>
+      <ul>
+        <li><b class="up">빨강 ▲ +</b> 오르거나 이익 · <b class="down">파랑 ▼ −</b> 내리거나 손해</li>
+        <li>맨 위 <b>총 자산</b> · <b>총 손익</b> · <b>오늘</b>(전일 대비) · 오늘 그래프(1분마다 한 점)</li>
+        <li>값이 바뀐 현재가는 잠깐 색이 깜빡여요. 오른쪽 위에 마지막으로 받은 시각이 보여요.</li>
+      </ul></div>
+    <div style="flex:1"><h2 style="margin-bottom:8px">설정에서 바꿀 수 있는 것</h2>
+      <ul>
+        <li>시세 갱신: 실시간(권장) · 5초 · 30초 · 1분</li>
+        <li>화면: 맥 설정 따름 · 라이트 · 다크</li>
+        <li>계좌 이름 바꾸기 · 지우기, 업데이트 확인 · 자동 업데이트</li>
+      </ul></div>
+  </section>
+
+  <section class="note">
+    <h2>꼭 알아 두세요</h2>
+    <ul>
+      <li>나무증권을 연결하기 전에는 국내주식이 <b>전일 종가</b>로 보여요. 코인은 업비트 시세로 늘 바로 보여요.</li>
+      <li>장이 닫힌 시간(평일 저녁 · 주말)에는 마지막 가격을 보여 줘요. 시세와 손익은 참고용이에요.</li>
+      <li>나무증권은 접근 토큰을 새로 받을 때 알림을 보낼 수 있어요. MFROAD 는 토큰을 저장해 두고 하루에 한 번 정도만 새로 받아요.</li>
+      <li>App Key · App Secret 은 다른 사람에게 보내지 마세요. 새 버전이 나오면 앱이 알아서 받아요.</li>
+    </ul>
+  </section>
+
+  <div class="foot"><span>자료는 이 Mac 안에만 저장돼요 (보유 내역 · 설정)</span><span>made by. Nevertheless_D</span></div>
+</div>
+</body>
+</html>

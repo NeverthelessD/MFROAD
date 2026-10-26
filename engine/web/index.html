@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MFROAD</title>
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="15" width="3" height="5" rx="0.8" class="bar"></rect><rect x="10.5" y="12.5" width="3" height="7.5" rx="0.8" class="bar"></rect><rect x="17" y="10" width="3" height="10" rx="0.8" class="bar"></rect><path d="M3 13 L8.5 8.5 L12.5 11 L20 4" class="line"></path><path d="M15 4 H20 V9" class="line"></path></svg></span>
+      <span class="logo">MFROAD</span>
+    </div>
+    <nav class="seg" id="tabs" aria-label="자산 구분">
+      <button type="button" data-tab="all" aria-pressed="true">전체</button>
+      <button type="button" data-tab="stock" aria-pressed="false">국내주식</button>
+      <button type="button" data-tab="coin" aria-pressed="false">코인</button>
+    </nav>
+    <div class="actions">
+      <span class="live" id="live"><span class="dot"></span><span id="liveText">연결 중…</span></span>
+      <button type="button" class="icon-btn" id="btnRefresh" aria-label="지금 새로고침" title="지금 새로고침">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v5h-5"></path></svg>
+      </button>
+      <button type="button" class="icon-btn" id="btnSettings" aria-label="설정" title="설정">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"></path><circle cx="15" cy="6" r="2"></circle><circle cx="9" cy="12" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg>
+      </button>
+      <button type="button" class="btn primary" id="btnAdd">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="plus"><path d="M12 5v14M5 12h14"></path></svg>종목 추가
+      </button>
+    </div>
+  </header>
+
+  <div id="notices" class="notices"></div>
+
+  <main id="main" class="main"></main>
+
+  <footer class="foot">
+    <span id="footSource">시세 · 나무증권 PLUG(국내주식) · 업비트(코인)</span>
+    <span><button type="button" class="link" id="btnVersion">v—</button> · made by. Nevertheless_D</span>
+  </footer>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="offline" class="offline" hidden>
+  <div class="offline-card">
+    <div class="spinner"></div>
+    <b>MFROAD 엔진과 연결이 잠시 끊겼어요</b>
+    <span>다시 연결하는 중이에요. 계속 이 화면이면 앱을 종료했다가 다시 열어 주세요.</span>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
