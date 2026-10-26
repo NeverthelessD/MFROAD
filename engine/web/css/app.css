@@ -109,6 +109,8 @@ svg { display: block; }
 .total .amount { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .total .amount .v { font-family: var(--num); font-variant-numeric: tabular-nums; font-size: 54px; font-weight: 600; letter-spacing: -.02em; line-height: 1.05; }
 .total .amount .u { font-size: 22px; font-weight: 600; }
+.total .base { font-size: 14px; color: var(--muted); }
+.total .base b { font-family: var(--num); font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); }
 .chips { display: flex; flex-wrap: wrap; gap: 10px; }
 .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 12px; border-radius: 9px; font-size: 14px; font-weight: 600; background: var(--surface2); border: 1px solid var(--line); }
 .chip.tint-up { background: var(--upSoft); border-color: transparent; }

@@ -210,6 +210,7 @@ function totalHTML(t, ts, tc) {
     <div style="display:flex;flex-direction:column;gap:6px">
       <span class="label">${label}</span>
       <div class="amount"><span class="v">${won(t.value)}</span><span class="u">원</span></div>
+      <span class="base" title="산 가격(평균 단가) × 보유 수량을 모두 더한 금액이에요. 시세가 바뀌어도 그대로예요.">평균 단가 기준 <b>${won(t.cost)}원</b></span>
     </div>
     <div class="chips">
       <span class="chip tint-${tone(t.pl) === 'down' ? 'down' : 'up'} ${tone(t.pl)}"><span class="k">총 손익</span>${sWon(t.pl)}원 (${sPct(t.plp)})</span>
