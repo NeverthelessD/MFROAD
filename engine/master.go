@@ -86,6 +86,7 @@ func (m *Master) DiagLine() string {
 // Ensure: 저장해 둔 목록을 먼저 읽고, 12시간이 지났으면 새로 받아요. 그 뒤로 12시간마다 다시 확인해요.
 func (m *Master) Ensure() {
 	m.loadCache()
+	fails := 0
 	for {
 		st, err := os.Stat(m.cachePath())
 		if err != nil || time.Since(st.ModTime()) > 12*time.Hour || !m.Ready() {
@@ -94,12 +95,44 @@ func (m *Master) Ensure() {
 				m.err = err.Error()
 				m.mu.Unlock()
 				log.Printf("master: %v", err)
-				time.Sleep(2 * time.Minute)
+				fails++
+				time.Sleep(retryWait(fails, m.Ready()))
 				continue
 			}
 		}
+		fails = 0
 		time.Sleep(time.Hour)
 	}
+}
+
+// retryWait: 목록이 아직 하나도 없으면(처음 켠 때) 금방 다시 받아 보고, 있으면 천천히 다시 시도해요.
+func retryWait(fails int, have bool) time.Duration {
+	if have {
+		return 2 * time.Minute
+	}
+	switch {
+	case fails <= 1:
+		return 5 * time.Second
+	case fails <= 3:
+		return 15 * time.Second
+	case fails <= 6:
+		return 45 * time.Second
+	}
+	return 2 * time.Minute
+}
+
+// WaitReady: 처음 켠 직후 검색하면 목록을 받을 때까지 잠깐(최대 d) 기다려요.
+func (m *Master) WaitReady(d time.Duration) bool { return waitFor(m.Ready, d) }
+
+func waitFor(ok func() bool, d time.Duration) bool {
+	end := time.Now().Add(d)
+	for !ok() {
+		if time.Now().After(end) {
+			return false
+		}
+		time.Sleep(150 * time.Millisecond)
+	}
+	return true
 }
 
 func (m *Master) loadCache() {

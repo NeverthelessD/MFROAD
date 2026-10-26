@@ -57,7 +57,11 @@ echo "▶ A. 켜기 · 화면 · 검색"
 launch; check "A1 앱을 열면 엔진이 준비됨" ping_ok
 check "A2 엔진이 Dock 앱 방식으로 켜짐(shell=native)" bash -c "curl -fs -H 'x-token: $(tok)' http://127.0.0.1:$(port)/api/ping | grep -q '\"shell\":\"native\"'"
 check "A3 주소가 47931" test "$(port)" = "47931"
-sleep 2
+# 빌드 서버 맥에서는 새로 깐 앱의 엔진이 처음 ~30초 동안 127.0.0.1 의 가짜 시세 서버에 붙지 못할 때가 있어요
+# (실제 사용에서는 나무증권 · 업비트 주소로 가서 상관없어요). 종목 목록이 준비될 때까지 기다리고 걸린 시간을 남겨요.
+T0=$(date +%s)
+for _ in $(seq 1 150); do api /api/poll 2>/dev/null | grep -q '"master":true' && break; sleep 0.5; done
+echo "종목 목록 준비까지 $(( $(date +%s) - T0 ))초" | tee -a "$OUT/info.txt"
 N=$(api "/api/search?kind=stock&q=%EC%82%BC%EC%84%B1" | json "len(d['items'])" 2>/dev/null)
 check "A4 국내주식 검색 '삼성' (찾은 수: ${N:-?})" test "${N:-0}" -ge 4
 C=$(api "/api/search?kind=coin&q=btc" | json "d['items'][0]['code']" 2>/dev/null)

@@ -108,6 +108,7 @@ func (u *Upbit) EnsureMarkets() {
 			}
 		}
 	}
+	fails := 0
 	for {
 		u.mu.Lock()
 		stale := len(u.list) == 0 || time.Since(u.loadedAt) > 12*time.Hour
@@ -118,9 +119,11 @@ func (u *Upbit) EnsureMarkets() {
 				u.mu.Lock()
 				u.err = err.Error()
 				u.mu.Unlock()
-				time.Sleep(time.Minute)
+				fails++
+				time.Sleep(retryWait(fails, u.Ready()))
 				continue
 			}
+			fails = 0
 			u.setList(ms)
 			b, _ := json.Marshal(ms)
 			os.MkdirAll(filepath.Dir(u.cachePath()), 0o755)
@@ -243,6 +246,9 @@ func (u *Upbit) Tickers(codes []string) ([]*Quote, error) {
 	}
 	return out, nil
 }
+
+// WaitReady: 처음 켠 직후 검색하면 코인 목록을 받을 때까지 잠깐(최대 d) 기다려요.
+func (u *Upbit) WaitReady(d time.Duration) bool { return waitFor(u.Ready, d) }
 
 func (u *Upbit) Ready() bool {
 	u.mu.Lock()

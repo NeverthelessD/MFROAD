@@ -260,3 +260,22 @@ func TestNumAndCode(t *testing.T) {
 		t.Fatal("chosung")
 	}
 }
+
+// 처음 켠 직후 검색하면 목록이 준비될 때까지 잠깐 기다려요 (바로 '준비 중' 오류를 내지 않음)
+func TestWaitForReady(t *testing.T) {
+	var ready atomic.Bool
+	go func() { time.Sleep(300 * time.Millisecond); ready.Store(true) }()
+	start := time.Now()
+	if !waitFor(ready.Load, 3*time.Second) {
+		t.Fatal("should become ready")
+	}
+	if time.Since(start) < 250*time.Millisecond {
+		t.Fatal("returned too early")
+	}
+	if waitFor(func() bool { return false }, 200*time.Millisecond) {
+		t.Fatal("should time out")
+	}
+	if retryWait(1, false) != 5*time.Second || retryWait(1, true) != 2*time.Minute {
+		t.Fatal("retry waits")
+	}
+}

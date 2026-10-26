@@ -33,13 +33,13 @@ type Quote struct {
 func qkey(kind, code string) string { return kind + ":" + code }
 
 type Market struct {
-	mu      sync.Mutex
-	quotes  map[string]*Quote
-	rev     int64
-	wake    chan struct{}
-	coinErr string
-	coinAt  int64
-	stockAt int64
+	mu       sync.Mutex
+	quotes   map[string]*Quote
+	rev      int64
+	wake     chan struct{}
+	coinErr  string
+	coinAt   int64
+	stockAt  int64
 	stockSrc string
 }
 

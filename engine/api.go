@@ -26,6 +26,7 @@ func (a *App) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	out := []item{}
 	if kind == "coin" {
+		a.coins.WaitReady(12 * time.Second)
 		list, err := a.coins.Search(q, 12)
 		if err != nil {
 			jsonError(w, 503, err.Error())
@@ -51,6 +52,7 @@ func (a *App) handleSearch(w http.ResponseWriter, r *http.Request) {
 			out = append(out, it)
 		}
 	} else {
+		a.master.WaitReady(12 * time.Second)
 		list, err := a.master.Search(q, 12)
 		if err != nil {
 			jsonError(w, 503, err.Error())
