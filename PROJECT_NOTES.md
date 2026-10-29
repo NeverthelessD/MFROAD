@@ -10,6 +10,7 @@ My Finance ROAD. 국내주식 · 코인 자산 확인 앱. macOS (Apple Silicon)
 
 ## 진행 사항
 
+- **2026-10-29 내려받기용 zip (사용자 요청)**: 저장소 `download/` 폴더에 `MFROAD.zip`(앱 + 사용 가이드)를 올리고, README 맨 위 '앱 받기' 링크(`raw/main/download/MFROAD.zip`)로 바로 받게 했어요. 예전 버전 zip 은 지웠어요 (저장소 `releases/` 에도 업데이트용 최신판만).
 작업이 중간에 끊기면 아래 체크리스트에서 **처음으로 체크 안 된 항목부터** 이어서 하면 돼요.
 
 - [x] 0. 요구 정리 · 나무증권 PLUG API 조사 · 디자인 시안 (Design 캔버스 'MFROAD 디자인 시안', 2026-10-26 확정)
@@ -34,6 +35,7 @@ My Finance ROAD. 국내주식 · 코인 자산 확인 앱. macOS (Apple Silicon)
 
 ## 결정 사항
 
+- **GitHub 에는 늘 최신판 zip 1개만**: 업데이트를 내보낼 때마다 `scripts/publish-download.sh` 가 앱 + 가이드 zip 을 `download/` 에 정해진 이름으로 바꿔 넣고 다른 파일은 지워요(release.sh 가 자동으로 불러요. GitHub 릴리스 페이지는 이 작업 환경에서 만들 수 없어 저장소 폴더를 써요). `releases/` 의 업데이트용 zip 도 현재 버전만 남겨요 — 설치된 앱은 latest.json 이 가리키는 zip 만 받고, '되돌리기'는 맥 안의 백업을 써서 예전 zip 이 필요 없어요.
 - 이름: MFROAD (My Finance ROAD). 다루는 것: **국내주식 + 코인** (해외주식은 나중에).
 - 시세
   - 국내주식: 나무증권 PLUG(REST, `https://api.nhplug.com:8443`). 키가 없으면 종목 마스터의 **전일 종가**로 보여 주고 "나무증권을 연결하면 실시간" 안내.

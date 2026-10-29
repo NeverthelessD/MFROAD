@@ -1,5 +1,11 @@
 # MFROAD
 
+## ⬇️ 앱 받기
+
+**[MFROAD.zip 받기 (macOS)](https://github.com/NeverthelessD/MFROAD/raw/main/download/MFROAD.zip)**
+
+항상 가장 최신판이에요. zip 안에 앱과 사용 가이드가 함께 들어 있어요.
+
 My Finance ROAD — 국내주식 · 코인 자산 확인 (macOS · Apple Silicon) — made by. Nevertheless_D
 
 종목이나 코인을 검색해서 **어느 계좌에, 몇 개를, 얼마에** 샀는지 넣어 두면 지금 가격으로 평가 금액 · 손익 · 총 자산을 계속 계산해 줘요.
@@ -14,7 +20,7 @@ My Finance ROAD — 국내주식 · 코인 자산 확인 (macOS · Apple Silicon
 
 ## 설치
 
-1. [`releases/`](releases) 폴더에서 가장 최신 `MFROAD-x.y.z.zip`을 받아 압축을 풀어요.
+1. 위의 **앱 받기**에서 `MFROAD.zip`을 받아 압축을 풀어요. (안에 앱과 사용 가이드가 들어 있어요)
 2. `MFROAD.app`을 **응용 프로그램** 폴더로 옮겨요. (업데이트가 동작하려면 꼭 옮겨 주세요)
 3. 처음 열 때 경고가 뜨면 **시스템 설정 → 개인정보 보호 및 보안 → "그래도 열기"**.
 
