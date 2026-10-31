@@ -734,12 +734,14 @@ function nhSectionHTML() {
       <div class="dfoot">${SET.editKeys ? '<button type="button" class="btn" data-keycancel>취소</button>' : ''}<button type="button" class="btn primary" data-keysave>저장하고 연결</button></div>`;
   } else {
     const left = nh.tokenLeft || 0;
-    const tl = left > 0 ? `${Math.floor(left / 3600)}시간 ${Math.floor((left % 3600) / 60)}분 남음 · 자동으로 다시 받아요` : '필요할 때 자동으로 받아요';
+    const tl = tokenText(left);
     h += `<div style="display:flex;flex-direction:column;gap:8px">
         <div class="keyrow"><span class="k">App Key</span><span class="v">•••••••••••••••• ${esc(nh.keyTail || '')}</span><button type="button" class="btn small" data-keyedit>변경</button></div>
         <div class="keyrow"><span class="k">App Secret</span><span class="v">•••••••••••••••• ••••</span><button type="button" class="btn small" data-keyedit>변경</button></div></div>`;
     if (nh.state === 'error' && nh.error) h += `<div class="hint warn">${esc(nh.error)}</div>`;
     h += `<div class="between"><span class="d" id="nhToken">접근 토큰 · ${esc(tl)}</span><button type="button" class="btn small ghost" data-nhtest>연결 확인</button></div>`;
+    const last = (nh.tokenLog || []).slice(-1)[0];
+    if (last) h += `<div class="d" style="margin-top:-6px">마지막으로 새로 받음 · ${esc(last.slice(0, 11))} (${esc(last.slice(12))})</div>`;
   }
   h += `<div class="safe">${ICON.lock}<span>키는 이 Mac의 키체인에만 저장돼요. 다른 곳으로 보내지 않아요. MFROAD는 조회만 하고 주문은 하지 않아요.</span></div>`;
   if (nh.configured && !SET.editKeys) {
@@ -809,8 +811,13 @@ SET.refreshStatus = () => {
   if (settingsSig() !== SET.sig && !($('#nhKey', SET.el) && ($('#nhKey', SET.el).value || $('#nhSecret', SET.el).value))) { drawSettings(); return; }
   const nh = S.nh || {};
   const t = $('#nhToken', SET.el);
-  if (t && nh.tokenLeft > 0) t.textContent = `접근 토큰 · ${Math.floor(nh.tokenLeft / 3600)}시간 ${Math.floor((nh.tokenLeft % 3600) / 60)}분 남음 · 자동으로 다시 받아요`;
+  if (t && nh.tokenLeft > 0) t.textContent = `접근 토큰 · ${tokenText(nh.tokenLeft)}`;
 };
+
+// 나무증권 토큰은 24시간 동안 다시 써요 (새로 받을 때만 나무증권 알림이 와요)
+function tokenText(left) {
+  return left > 0 ? `${Math.floor(left / 3600)}시간 ${Math.floor((left % 3600) / 60)}분 더 써요 · 그동안은 알림 없이 다시 써요` : '필요할 때 받아요 (받을 때 나무증권 알림이 와요)';
+}
 
 function bindSettings(body) {
   $$('[data-refresh]', body).forEach((b) => b.onclick = async () => { await saveSettings({ refresh: b.dataset.refresh }); drawSettings(); renderLive(); });

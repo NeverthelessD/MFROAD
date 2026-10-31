@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -277,5 +278,66 @@ func TestWaitForReady(t *testing.T) {
 	}
 	if retryWait(1, false) != 5*time.Second || retryWait(1, true) != 2*time.Minute {
 		t.Fatal("retry waits")
+	}
+}
+
+// 나무증권은 토큰을 새로 받을 때마다 알림을 보내요.
+// - 토큰과 상관없는 401(예: 어떤 조회가 막혀 있음)로는 토큰을 계속 바꾸지 않아요 (한 번 확인하고 기억)
+// - 여러 조회가 동시에 시작해도 토큰은 한 번만 받아요
+// - 다시 켜도 저장된 토큰 · 기억한 것을 그대로 써요
+func TestNHTokenNotReissuedNeedlessly(t *testing.T) {
+	dir := testApp(t)
+	var tokens atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "application/json")
+		switch r.URL.Path {
+		case "/oauth2/token":
+			time.Sleep(50 * time.Millisecond)
+			n := tokens.Add(1)
+			w.Write([]byte(`{"access_token":"tok` + itoa(int(n)) + `","expires_in":86400}`))
+		case "/krstock/quote/v1/etfCurrent": // 늘 401 (토큰 문제가 아닌 '권한 없음')
+			w.WriteHeader(401)
+			w.Write([]byte(`{"rsp_cd":"IGW00121","rsp_msg":"사용 권한이 없습니다"}`))
+		default:
+			w.Write([]byte(`{"Output_0":[{"acct_no":"111","acct_type":"01"}]}`))
+		}
+	}))
+	defer srv.Close()
+	t.Setenv("MFROAD_NH_BASE", srv.URL)
+	t.Setenv("MFROAD_TEST_SECRETS", "file")
+	secretSet("nh-appkey", "KEY9")
+	secretSet("nh-appsecret", "SEC9")
+
+	n := NewNH(dir)
+	n.LoadKeys()
+	var wg sync.WaitGroup
+	for i := 0; i < 6; i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); n.Accounts() }()
+	}
+	wg.Wait()
+	if tokens.Load() != 1 {
+		t.Fatalf("동시에 시작해도 토큰은 한 번만: %d", tokens.Load())
+	}
+	n.call("/krstock/quote/v1/etfCurrent", nil, "", "") // 처음 한 번은 확인차 새로 받음
+	if tokens.Load() != 2 {
+		t.Fatalf("처음 보는 401 은 한 번만 확인: %d", tokens.Load())
+	}
+	for i := 0; i < 3; i++ {
+		n.call("/krstock/quote/v1/etfCurrent", nil, "", "")
+	}
+	n.Accounts()
+	if tokens.Load() != 2 {
+		t.Fatalf("토큰과 상관없는 401 로 토큰을 계속 바꿨어요: %d", tokens.Load())
+	}
+	n2 := NewNH(dir) // 앱을 다시 켬
+	n2.LoadKeys()
+	n2.call("/krstock/quote/v1/etfCurrent", nil, "", "")
+	n2.Accounts()
+	if tokens.Load() != 2 {
+		t.Fatalf("다시 켰을 때 토큰을 새로 받았어요: %d", tokens.Load())
+	}
+	if st := n2.Status(); len(st["tokenLog"].([]string)) != 2 {
+		t.Fatalf("토큰 기록: %v", st["tokenLog"])
 	}
 }

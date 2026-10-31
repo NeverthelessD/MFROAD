@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -55,6 +56,9 @@ type NH struct {
 
 	token    string
 	tokenExp time.Time
+	issueMu  sync.Mutex      // 토큰은 한 번에 하나만 받아요 (여러 조회가 동시에 시작해도 알림은 한 번)
+	plain401 map[string]bool // 새 토큰으로도 401 이 오는 조회 → 토큰 문제가 아님 (다시는 토큰을 바꾸지 않음)
+	tokenLog []string        // 토큰을 새로 받은 때 · 이유 (최근 10개, 진단 정보에 보여 줘요)
 
 	state    string // none | ok | error
 	err      string
@@ -165,6 +169,7 @@ func (n *NH) Status() map[string]any {
 		"lastSync":   lastSync,
 		"syncError":  n.syncErr,
 		"synced":     n.syncN,
+		"tokenLog":   append([]string(nil), n.tokenLog...),
 	}
 }
 
@@ -173,8 +178,8 @@ func (n *NH) DiagLine() string {
 	if st["configured"] != true {
 		return "연결 안 됨"
 	}
-	return fmt.Sprintf("상태=%v · 토큰 %v초 남음 · 계좌 %v개 · 마지막 불러오기 %v %v · %v",
-		st["state"], st["tokenLeft"], st["accounts"], st["lastSync"], st["syncError"], st["error"])
+	return fmt.Sprintf("상태=%v · 토큰 %v초 남음 · 계좌 %v개 · 마지막 불러오기 %v %v · %v · 토큰 받은 기록: %v",
+		st["state"], st["tokenLeft"], st["accounts"], st["lastSync"], st["syncError"], st["error"], st["tokenLog"])
 }
 
 func (n *NH) setErr(msg string) {
@@ -198,27 +203,43 @@ func (n *NH) tokenScope() string {
 
 func (n *NH) tokenPath() string { return filepath.Join(n.support, "nh-token.json") }
 
+type tokenFile struct {
+	Scope    string   `json:"scope"`
+	Token    string   `json:"token"`
+	Exp      int64    `json:"exp"`
+	Plain401 []string `json:"plain401,omitempty"`
+	Log      []string `json:"log,omitempty"`
+}
+
 // loadToken: n.mu 를 잡은 채로 불러요
 func (n *NH) loadToken() {
-	var t struct {
-		Scope string `json:"scope"`
-		Token string `json:"token"`
-		Exp   int64  `json:"exp"`
-	}
+	var t tokenFile
 	b, err := os.ReadFile(n.tokenPath())
 	if err != nil || json.Unmarshal(b, &t) != nil {
 		return
 	}
-	if t.Scope == n.tokenScope() && time.Unix(t.Exp, 0).After(time.Now().Add(time.Minute)) {
+	n.tokenLog = t.Log
+	if t.Scope != n.tokenScope() {
+		return
+	}
+	n.plain401 = map[string]bool{}
+	for _, p := range t.Plain401 {
+		n.plain401[p] = true
+	}
+	if time.Unix(t.Exp, 0).After(time.Now().Add(time.Minute)) {
 		n.token, n.tokenExp = t.Token, time.Unix(t.Exp, 0)
 	}
 }
 
-func (n *NH) clearToken() {
-	n.mu.Lock()
-	n.token, n.tokenExp = "", time.Time{}
-	n.mu.Unlock()
-	os.Remove(n.tokenPath())
+// saveTokenLocked: n.mu 를 잡은 채로 불러요. 토큰 · 배운 것 · 기록을 파일(0600)에 남겨요.
+func (n *NH) saveTokenLocked() {
+	t := tokenFile{Scope: n.tokenScope(), Token: n.token, Exp: n.tokenExp.Unix(), Log: n.tokenLog}
+	for p := range n.plain401 {
+		t.Plain401 = append(t.Plain401, p)
+	}
+	sort.Strings(t.Plain401)
+	b, _ := json.Marshal(t)
+	writeFileAtomic(n.tokenPath(), b, 0o600)
 }
 
 // issueToken: 키로 새 토큰을 받아요 (key/secret 을 따로 받아 저장 전 시험에도 써요)
@@ -270,12 +291,23 @@ func (n *NH) issueToken(base, key, secret string) (string, time.Time, error) {
 	return "", time.Time{}, errors.New(last)
 }
 
-func (n *NH) ensureToken(force bool) (string, error) {
+// ensureToken: 쓸 수 있는 토큰을 돌려줘요. 저장해 둔 토큰이 살아 있으면 그대로 쓰고(알림 없음),
+// 없거나 기한이 지났거나 서버가 방금 거절한 토큰(bad)일 때만 새로 받아요. why 는 진단용 이유.
+// 나무증권은 토큰을 새로 받을 때마다 사용자에게 보안 알림을 보내요 → 꼭 필요할 때만, 한 번에 하나만.
+func (n *NH) ensureToken(bad, why string) (string, error) {
+	n.issueMu.Lock()
+	defer n.issueMu.Unlock()
 	n.mu.Lock()
-	if !force && n.token != "" && time.Now().Add(30*time.Second).Before(n.tokenExp) {
+	if n.token != "" && n.token != bad && time.Now().Add(30*time.Second).Before(n.tokenExp) {
 		t := n.token
 		n.mu.Unlock()
 		return t, nil
+	}
+	if why == "" {
+		why = "저장된 토큰 없음"
+		if n.token != "" {
+			why = "토큰 기한(24시간) 지남"
+		}
 	}
 	key, sec, base := n.appKey, n.secret, n.base()
 	n.mu.Unlock()
@@ -288,11 +320,39 @@ func (n *NH) ensureToken(force bool) (string, error) {
 	}
 	n.mu.Lock()
 	n.token, n.tokenExp = tok, exp
-	scope := n.tokenScope()
+	n.noteIssueLocked(why)
+	n.saveTokenLocked()
 	n.mu.Unlock()
-	b, _ := json.Marshal(map[string]any{"scope": scope, "token": tok, "exp": exp.Unix()})
-	writeFileAtomic(n.tokenPath(), b, 0o600)
+	log.Printf("nh: token reason: %s", why)
 	return tok, nil
+}
+
+// noteIssueLocked: 토큰을 새로 받은 때와 이유를 남겨요 (n.mu 를 잡은 채로)
+func (n *NH) noteIssueLocked(why string) {
+	n.tokenLog = append(n.tokenLog, time.Now().Format("01-02 15:04")+" "+why)
+	if len(n.tokenLog) > 10 {
+		n.tokenLog = n.tokenLog[len(n.tokenLog)-10:]
+	}
+	diag.line("나무증권 토큰 새로 받음 · " + why)
+}
+
+// tokenRejected: 서버 응답이 '토큰이 틀렸다/만료됐다'는 뜻인지. 분명한 신호가 아니면 토큰을 버리지 않아요.
+func (n *NH) tokenRejected(path string, status int, raw []byte) (bool, string) {
+	code, msg := nhMessage(raw)
+	low := strings.ToLower(msg)
+	if code == "IGW40043" || strings.Contains(string(raw), "IGW40043") || invalidTokenRe.Match(raw) ||
+		((strings.Contains(low, "token") || strings.Contains(msg, "토큰")) && (strings.Contains(msg, "만료") || strings.Contains(low, "expired") || strings.Contains(msg, "유효"))) {
+		return true, "서버가 토큰 만료를 알림 (" + path + ")"
+	}
+	if status == 401 {
+		n.mu.Lock()
+		known := n.plain401[path]
+		n.mu.Unlock()
+		if !known {
+			return true, fmt.Sprintf("서버가 401 응답 (%s %s)", path, code)
+		}
+	}
+	return false, ""
 }
 
 // ---------------------------------------------------------------- 호출
@@ -344,9 +404,9 @@ func (n *NH) call(path string, input map[string]any, cts, ctsFlag string) (*nhRe
 		input = map[string]any{}
 	}
 	body, _ := json.Marshal(map[string]any{"Input_0": input})
-	force := false
+	bad, why := "", ""
 	for attempt := 0; attempt < 2; attempt++ {
-		tok, err := n.ensureToken(force)
+		tok, err := n.ensureToken(bad, why)
 		if err != nil {
 			n.setErr(err.Error())
 			return nil, err
@@ -379,10 +439,21 @@ func (n *NH) call(path string, input map[string]any, cts, ctsFlag string) (*nhRe
 			n.setOK()
 			return &nhResult{Data: d, CTS: strings.TrimSpace(resp.Header.Get("cts")), CTSFlag: strings.TrimSpace(resp.Header.Get("cts_flag"))}, nil
 		}
-		if attempt == 0 && (resp.StatusCode == 401 || strings.Contains(string(raw), "IGW40043") || invalidTokenRe.Match(raw)) {
-			n.clearToken()
-			force = true
-			continue
+		if attempt == 0 {
+			if rej, reason := n.tokenRejected(path, resp.StatusCode, raw); rej {
+				bad, why = tok, reason
+				continue
+			}
+		} else if bad != "" && resp.StatusCode == 401 {
+			// 방금 받은 새 토큰으로도 401 → 이 조회의 401 은 토큰 문제가 아니에요. 기억해서 다시는 토큰을 바꾸지 않아요.
+			n.mu.Lock()
+			if n.plain401 == nil {
+				n.plain401 = map[string]bool{}
+			}
+			n.plain401[path] = true
+			n.saveTokenLocked()
+			n.mu.Unlock()
+			log.Printf("nh: %s 401 is not a token problem — remembered", path)
 		}
 		code, msg := nhMessage(raw)
 		e := friendlyNH(resp.StatusCode, code, msg)
@@ -468,10 +539,10 @@ func (n *NH) SaveKeys(key, secret, brand string) error {
 	n.appKey, n.secret, n.brand = key, secret, brand
 	n.token, n.tokenExp = tok, exp
 	n.state, n.err = "ok", ""
-	scope := n.tokenScope()
+	n.plain401 = nil
+	n.noteIssueLocked("키를 새로 넣음")
+	n.saveTokenLocked()
 	n.mu.Unlock()
-	b, _ := json.Marshal(map[string]any{"scope": scope, "token": tok, "exp": exp.Unix()})
-	writeFileAtomic(n.tokenPath(), b, 0o600)
 	log.Printf("nh: keys saved to keychain (…%s)", tail4(key))
 	return nil
 }
