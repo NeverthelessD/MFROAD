@@ -120,4 +120,4 @@ MFROAD_SUPPORT=/tmp/sup MFROAD_TOKEN=t MFROAD_NH_BASE=http://127.0.0.1:47999 MFR
 2. `git ls-remote origin ci-results` 가 바뀔 때까지 기다린 뒤 결과 확인:
    `git fetch origin +refs/heads/ci-results:refs/remotes/origin/ci-results && git archive origin/ci-results | tar -x -C <임시폴더>`
    → status.json(build/smoke 모두 ok), results.txt, shot-app.png 확인
-3. `scripts/release.sh --notes "바뀐 점 1" "바뀐 점 2"` → 커밋 · 푸시. 처음 설치용은 dist/MFROAD.zip.
+3. `scripts/release.sh --notes "바뀐 점 1" "바뀐 점 2"` → `git add releases download` 로 **둘 다** 커밋 · 푸시. 처음 설치용은 dist/MFROAD.zip(= download/MFROAD.zip).
