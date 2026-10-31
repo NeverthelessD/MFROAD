@@ -1,0 +1,82 @@
+10-31 11:15:36 [앱 5169] 시작 v1.0.2 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+10-31 11:15:37 [앱 5169] 엔진 준비 (v1.0.2)
+10-31 11:15:37 [앱 5169] 엔진 켬 (지킴이 pid 5176)
+10-31 11:15:37 [지킴이 5176] 시작 · 엔진 1.0.2 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+10-31 11:15:37 [지킴이 5176] 엔진 켬 (pid 5178, 포트 자동)
+10-31 11:15:37 [앱 5169] 엔진 준비됨 (포트 47931)
+10-31 11:15:50 [지킴이 5176] ⚠️ 엔진이 갑자기 꺼졌어요: 종료 코드 2, 13s 동안 실행
+----- 엔진 마지막 출력 -----
+2026/10/31 11:15:37 MFROAD 1.0.2 listening on 47931 (pid 5178, 지킴이 true)
+2026/10/31 11:15:37 master: 139 stocks
+2026/10/31 11:15:39 nh: new access token issued (expires in 86400s)
+2026/10/31 11:15:39 nh: keys saved to keychain (…a91c)
+2026/10/31 11:15:40 nh import: 1 accounts, 3 holdings, 0 errors
+2026/10/31 11:15:41 nh import: 1 accounts, 3 holdings, 0 errors
+SIGSEGV: segmentation violation
+PC=0x18c3d7d04 m=0 sigcode=2 addr=0x0
+
+goroutine 0 gp=0x102e98740 m=0 mp=0x102e991c0 [idle]:
+runtime.kevent(0x5, 0x0, 0x0, 0x16d7b4ff0, 0x40, 0x16d7b4fc0)
+	runtime/sys_darwin.go:498 +0x20 fp=0x16d7b4f70 sp=0x16d7b4f50 pc=0x1026a1dd0
+runtime.netpoll(0x1c93bc9d)
+	runtime/netpoll_kqueue.go:110 +0xf8 fp=0x16d7b5800 sp=0x16d7b4f70 pc=0x10267cd88
+runtime.findRunnable()
+	runtime/proc.go:3657 +0x994 fp=0x16d7b5970 sp=0x16d7b5800 pc=0x102689864
+runtime.schedule()
+	runtime/proc.go:4072 +0x94 fp=0x16d7b59b0 sp=0x16d7b5970 pc=0x10268b384
+runtime.park_m(0x14000083180)
+	runtime/proc.go:4201 +0x2b0 fp=0x16d7b5a10 sp=0x16d7b59b0 pc=0x10268b860
+runtime.mcall()
+	runtime/asm_arm64.s:193 +0x54 fp=0x16d7b5a20 sp=0x16d7b5a10 pc=0x1026bb764
+
+goroutine 1 gp=0x140000021c0 m=nil [IO wait]:
+runtime.gopark(0x0?, 0x0?, 0x0?, 0x0?, 0x0?)
+	runtime/proc.go:435 +0xc8 fp=0x140001057b0 sp=0x14000105790 pc=0x1026b5c58
+runtime.netpollblock(0x14000105848?, 0x270a290?, 0x1?)
+	runtime/netpoll.go:575 +0x158 fp=0x140001057f0 sp=0x140001057b0 pc=0x10267c4c8
+internal/poll.runtime_pollWait(0x103244250, 0x72)
+	runtime/netpoll.go:351 +0xa0 fp=0x14000105820 sp=0x140001057f0 pc=0x1026b4e10
+… (349줄 생략) …
+r26     0x102c29450
+r27     0x102e24000
+r28     0x102e98740
+r29     0x16d7b4ee8
+lr      0x1026becf8
+sp      0x16d7b4ef0
+pc      0x18c3d7d04
+fault   0x0
+----------------------------
+10-31 11:15:50 [지킴이 5176] 엔진 켬 (pid 5459, 포트 47931)
+10-31 11:15:57 [앱 5169] 종료: 엔진을 끄는 중
+10-31 11:15:57 [지킴이 5176] 엔진이 정상적으로 끝났어요 (7s 동안 실행)
+10-31 11:15:57 [앱 5169] 종료 완료
+10-31 11:15:58 [앱 5719] 시작 v1.0.2 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+10-31 11:15:58 [앱 5719] 엔진 켬 (지킴이 pid 5724)
+10-31 11:15:58 [지킴이 5724] 시작 · 엔진 1.0.2 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+10-31 11:15:58 [지킴이 5724] 엔진 켬 (pid 5725, 포트 자동)
+10-31 11:15:58 [앱 5719] 엔진 준비됨 (포트 47931)
+10-31 11:16:07 [지킴이 5724] 엔진이 정상적으로 끝났어요 (8s 동안 실행)
+10-31 11:16:07 [앱 5719] 엔진이 끝나서 앱도 닫아요 (코드 0)
+10-31 11:16:07 [앱 5948] 시작 v1.0.2 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+10-31 11:16:07 [앱 5948] 엔진 켬 (지킴이 pid 5952)
+10-31 11:16:08 [지킴이 5952] 시작 · 엔진 1.0.2 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+10-31 11:16:08 [지킴이 5952] 엔진 켬 (pid 5953, 포트 자동)
+10-31 11:16:08 [앱 5948] 엔진 준비됨 (포트 47931)
+10-31 11:16:10 [지킴이 5952] MFROAD 앱이 사라짐 → 엔진을 끄고 지킴이도 끝냅니다
+10-31 11:16:10 [지킴이 5952] 엔진을 껐어요 (신호 terminated 로 꺼짐)
+10-31 11:16:10 [앱 5981] 시작 v1.0.2 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+10-31 11:16:10 [앱 5981] 엔진 켬 (지킴이 pid 5992)
+10-31 11:16:10 [지킴이 5992] 시작 · 엔진 1.0.2 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+10-31 11:16:10 [지킴이 5992] 엔진 켬 (pid 5994, 포트 자동)
+10-31 11:16:10 [앱 5981] 엔진 준비됨 (포트 47931)
+10-31 11:16:11 [지킴이 5992] 엔진이 정상적으로 끝났어요 (1s 동안 실행)
+10-31 11:16:11 [앱 5981] 새 버전으로 다시 열어요
+10-31 11:16:11 [앱 6015] 업데이트 뒤 다시 열림
+10-31 11:16:11 [앱 6015] 시작 v1.0.2 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+10-31 11:16:11 [앱 6015] 엔진 켬 (지킴이 pid 6018)
+10-31 11:16:11 [지킴이 6018] 시작 · 엔진 1.0.2 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+10-31 11:16:11 [지킴이 6018] 엔진 켬 (pid 6019, 포트 자동)
+10-31 11:16:11 [앱 6015] 엔진 준비됨 (포트 47931)
+10-31 11:16:14 [앱 6015] 종료: 엔진을 끄는 중
+10-31 11:16:14 [지킴이 6018] 엔진이 정상적으로 끝났어요 (3s 동안 실행)
+10-31 11:16:14 [앱 6015] 종료 완료

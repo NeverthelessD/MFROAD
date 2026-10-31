@@ -1,0 +1,5 @@
+--- A 실행 중
+ 5169     1 R    /Applications/MFROAD.app/Contents/MacOS/MFROAD
+ 5176  5169 S    /Users/runner/Library/Application Support/MFROAD/bin/mfroad-engine
+ 5178  5176 S    /Users/runner/Library/Application Support/MFROAD/bin/mfroad-engine
+--- D 종료 뒤

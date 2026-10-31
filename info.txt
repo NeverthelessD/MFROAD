@@ -1,0 +1,6 @@
+commit: 1f122cbe2cbff77df3ade838a39bff4455ec2dc2  version: 1.0.2  started: 2026-10-31T11:14:44Z
+ProductName:		macOS
+ProductVersion:		15.8.2
+BuildVersion:		24H232
+arm64
+종목 목록 준비까지 0초

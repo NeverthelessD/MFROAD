@@ -1,0 +1,2 @@
+82adef9f6a2025e91d3a0f11775f726ad789eaa9da38c36f260a07d7844678cd  /Users/runner/work/MFROAD/MFROAD/ci-out/MFROAD-1.0.2.zip
+73f6bf70d14f19b8693d435e4627fb06c46b69b4739e767e17d2e14158d4470d  /Users/runner/work/MFROAD/MFROAD/ci-out/MFROAD-first-install.zip

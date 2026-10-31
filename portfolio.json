@@ -1,0 +1,116 @@
+{
+  "v": 1,
+  "accounts": [
+    {
+      "id": "nh-20012345678",
+      "name": "나무증권",
+      "kind": "stock",
+      "source": "nh",
+      "ext": "20012345678"
+    },
+    {
+      "id": "abb52660d8d",
+      "name": "한국투자",
+      "kind": "stock"
+    },
+    {
+      "id": "a717358fb37",
+      "name": "업비트",
+      "kind": "coin"
+    }
+  ],
+  "lots": [
+    {
+      "id": "n20012345678-005930",
+      "kind": "stock",
+      "code": "005930",
+      "name": "삼성전자",
+      "market": "KOSPI",
+      "account": "nh-20012345678",
+      "qty": 120,
+      "avg": 61500,
+      "source": "nh",
+      "updated": 1793445340144
+    },
+    {
+      "id": "n20012345678-035420",
+      "kind": "stock",
+      "code": "035420",
+      "name": "NAVER",
+      "market": "KOSPI",
+      "account": "nh-20012345678",
+      "qty": 20,
+      "avg": 168000,
+      "source": "nh",
+      "updated": 1793445340144
+    },
+    {
+      "id": "n20012345678-069500",
+      "kind": "stock",
+      "code": "069500",
+      "name": "KODEX 200",
+      "market": "ETF",
+      "account": "nh-20012345678",
+      "qty": 50,
+      "avg": 34200,
+      "source": "nh",
+      "updated": 1793445340144
+    },
+    {
+      "id": "l90f4af52f292",
+      "kind": "stock",
+      "code": "005930",
+      "name": "삼성전자",
+      "market": "KOSPI",
+      "account": "abb52660d8d",
+      "qty": 40,
+      "avg": 67500,
+      "updated": 1793445340577
+    },
+    {
+      "id": "l851d3363edfc",
+      "kind": "stock",
+      "code": "000660",
+      "name": "SK하이닉스",
+      "market": "KOSPI",
+      "account": "abb52660d8d",
+      "qty": 15,
+      "avg": 182000,
+      "updated": 1793445340643
+    },
+    {
+      "id": "l09769b816032",
+      "kind": "coin",
+      "code": "BTC",
+      "name": "비트코인",
+      "market": "KRW",
+      "account": "a717358fb37",
+      "qty": 0.045,
+      "avg": 88000000,
+      "updated": 1793445340751
+    },
+    {
+      "id": "l96e9655ad3b3",
+      "kind": "coin",
+      "code": "ETH",
+      "name": "이더리움",
+      "market": "KRW",
+      "account": "a717358fb37",
+      "qty": 1.2,
+      "avg": 4850000,
+      "updated": 1793445340805
+    },
+    {
+      "id": "l8c370ee1ce4d",
+      "kind": "coin",
+      "code": "XRP",
+      "name": "리플",
+      "market": "KRW",
+      "account": "a717358fb37",
+      "qty": 800,
+      "avg": 3120,
+      "updated": 1793445340847
+    }
+  ],
+  "rev": 1793445337260
+}
