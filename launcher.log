@@ -1,0 +1,82 @@
+11-02 04:50:55 [앱 2370] 시작 v1.0.4 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+11-02 04:50:55 [앱 2370] 엔진 준비 (v1.0.4)
+11-02 04:50:55 [앱 2370] 엔진 켬 (지킴이 pid 2381)
+11-02 04:50:55 [지킴이 2381] 시작 · 엔진 1.0.4 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+11-02 04:50:55 [지킴이 2381] 엔진 켬 (pid 2382, 포트 자동)
+11-02 04:50:55 [앱 2370] 엔진 준비됨 (포트 47931)
+11-02 04:51:07 [지킴이 2381] ⚠️ 엔진이 갑자기 꺼졌어요: 종료 코드 2, 12s 동안 실행
+----- 엔진 마지막 출력 -----
+2026/11/02 04:50:55 이전 버전 보관 폴더를 Spotlight 에서 숨겼어요 (/Users/runner/Library/Application Support/MFROAD/backup.noindex/MFROAD.app)
+2026/11/02 04:50:55 MFROAD 1.0.4 listening on 47931 (pid 2382, 지킴이 true)
+2026/11/02 04:50:56 master: 139 stocks
+2026/11/02 04:50:57 nh: new access token issued (expires in 86400s)
+2026/11/02 04:50:57 nh: keys saved to keychain (…a91c)
+2026/11/02 04:50:58 nh import: 1 accounts, 3 holdings, 0 errors
+2026/11/02 04:50:59 nh import: 1 accounts, 3 holdings, 0 errors
+SIGSEGV: segmentation violation
+PC=0x19a6b13cc m=0 sigcode=2 addr=0x0
+
+goroutine 0 gp=0x1029d8740 m=0 mp=0x1029d91c0 [idle]:
+runtime.pthread_cond_wait(0x1029d9730, 0x1029d96f0)
+	runtime/sys_darwin.go:547 +0x20 fp=0x16dc75730 sp=0x16dc75700 pc=0x1021e1f00
+runtime.semasleep(0xffffffffffffffff)
+	runtime/os_darwin.go:72 +0x84 fp=0x16dc75790 sp=0x16dc75730 pc=0x1021bd2e4
+runtime.notesleep(0x1029d9318)
+	runtime/lock_sema.go:62 +0xb8 fp=0x16dc757d0 sp=0x16dc75790 pc=0x102199278
+runtime.mPark(...)
+	runtime/proc.go:1919
+runtime.stopm()
+	runtime/proc.go:2950 +0x84 fp=0x16dc75800 sp=0x16dc757d0 pc=0x1021c80d4
+runtime.findRunnable()
+	runtime/proc.go:3699 +0x1030 fp=0x16dc75970 sp=0x16dc75800 pc=0x1021c9f00
+runtime.schedule()
+	runtime/proc.go:4072 +0x94 fp=0x16dc759b0 sp=0x16dc75970 pc=0x1021cb384
+runtime.park_m(0x140002361c0)
+	runtime/proc.go:4201 +0x2b0 fp=0x16dc75a10 sp=0x16dc759b0 pc=0x1021cb860
+runtime.mcall()
+	runtime/asm_arm64.s:193 +0x54 fp=0x16dc75a20 sp=0x16dc75a10 pc=0x1021fb764
+
+… (360줄 생략) …
+r26     0xc00
+r27     0x1029c5000
+r28     0x1029d8740
+r29     0x16dc75690
+lr      0x19a6f009c
+sp      0x16dc75600
+pc      0x19a6b13cc
+fault   0x0
+----------------------------
+11-02 04:51:08 [지킴이 2381] 엔진 켬 (pid 2771, 포트 47931)
+11-02 04:51:14 [앱 2370] 종료: 엔진을 끄는 중
+11-02 04:51:15 [지킴이 2381] 엔진이 정상적으로 끝났어요 (7s 동안 실행)
+11-02 04:51:15 [앱 2370] 종료 완료
+11-02 04:51:15 [앱 2822] 시작 v1.0.4 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+11-02 04:51:15 [앱 2822] 엔진 켬 (지킴이 pid 2827)
+11-02 04:51:15 [지킴이 2827] 시작 · 엔진 1.0.4 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+11-02 04:51:15 [지킴이 2827] 엔진 켬 (pid 2828, 포트 자동)
+11-02 04:51:15 [앱 2822] 엔진 준비됨 (포트 47931)
+11-02 04:51:23 [지킴이 2827] 엔진이 정상적으로 끝났어요 (8s 동안 실행)
+11-02 04:51:23 [앱 2822] 엔진이 끝나서 앱도 닫아요 (코드 0)
+11-02 04:51:24 [앱 3057] 시작 v1.0.4 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+11-02 04:51:24 [앱 3057] 엔진 켬 (지킴이 pid 3061)
+11-02 04:51:24 [지킴이 3061] 시작 · 엔진 1.0.4 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+11-02 04:51:24 [지킴이 3061] 엔진 켬 (pid 3063, 포트 자동)
+11-02 04:51:24 [앱 3057] 엔진 준비됨 (포트 47931)
+11-02 04:51:26 [지킴이 3061] MFROAD 앱이 사라짐 → 엔진을 끄고 지킴이도 끝냅니다
+11-02 04:51:26 [지킴이 3061] 엔진을 껐어요 (신호 terminated 로 꺼짐)
+11-02 04:51:27 [앱 3095] 시작 v1.0.4 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+11-02 04:51:27 [앱 3095] 엔진 켬 (지킴이 pid 3105)
+11-02 04:51:27 [지킴이 3105] 시작 · 엔진 1.0.4 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+11-02 04:51:27 [지킴이 3105] 엔진 켬 (pid 3106, 포트 자동)
+11-02 04:51:27 [앱 3095] 엔진 준비됨 (포트 47931)
+11-02 04:51:28 [지킴이 3105] 엔진이 정상적으로 끝났어요 (1s 동안 실행)
+11-02 04:51:28 [앱 3095] 새 버전으로 다시 열어요
+11-02 04:51:28 [앱 3163] 업데이트 뒤 다시 열림
+11-02 04:51:28 [앱 3163] 시작 v1.0.4 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+11-02 04:51:28 [앱 3163] 엔진 켬 (지킴이 pid 3192)
+11-02 04:51:28 [지킴이 3192] 시작 · 엔진 1.0.4 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+11-02 04:51:28 [지킴이 3192] 엔진 켬 (pid 3194, 포트 자동)
+11-02 04:51:28 [앱 3163] 엔진 준비됨 (포트 47931)
+11-02 04:51:31 [앱 3163] 종료: 엔진을 끄는 중
+11-02 04:51:31 [지킴이 3192] 엔진이 정상적으로 끝났어요 (3s 동안 실행)
+11-02 04:51:31 [앱 3163] 종료 완료
