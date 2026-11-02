@@ -54,7 +54,11 @@ security delete-generic-password -s MFROAD-probe -a probe >/dev/null 2>&1
 security default-keychain > "$OUT/keychain.txt" 2>&1
 
 echo "▶ A. 켜기 · 화면 · 검색"
+# 예전 "backup" 폴더의 이전 버전 → 앱이 켜지면 Spotlight 가 안 찾는 backup.noindex 로 옮겨야 해요
+rm -rf "$SUP/backup" "$SUP/backup.noindex"; mkdir -p "$SUP/backup"; ditto "$APPDIR" "$SUP/backup/MFROAD.app"
+printf '1.0.0' > "$SUP/backup/MFROAD.app/Contents/Resources/version.txt"
 launch; check "A1 앱을 열면 엔진이 준비됨" ping_ok
+check "A1b 이전 버전 보관본을 Spotlight 가 안 찾는 폴더(backup.noindex)로 옮김" bash -c "test -d '$SUP/backup.noindex/MFROAD.app' && test ! -e '$SUP/backup'"
 check "A2 엔진이 Dock 앱 방식으로 켜짐(shell=native)" bash -c "curl -fs -H 'x-token: $(tok)' http://127.0.0.1:$(port)/api/ping | grep -q '\"shell\":\"native\"'"
 check "A3 주소가 47931" test "$(port)" = "47931"
 # 빌드 서버 맥에서는 새로 깐 앱의 엔진이 처음 ~30초 동안 127.0.0.1 의 가짜 시세 서버에 붙지 못할 때가 있어요

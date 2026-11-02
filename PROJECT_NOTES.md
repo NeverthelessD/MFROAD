@@ -41,6 +41,9 @@ My Finance ROAD. 국내주식 · 코인 자산 확인 앱. macOS (Apple Silicon)
 - 2026-11-02 v1.0.3: 사용자 제보 '앱을 열었더니 또 토큰 알림' → 설정에 '11-02 13:10 (저장된 토큰 없음)'. 사용자 확인 결과 마지막으로 켠 지 24시간이 넘음 = 정상(나무증권 규칙).
   다만 이름표가 틀렸음: 켤 때 기한 지난 토큰은 불러오지 않아서 '기한 지남'도 '저장된 토큰 없음'으로 적혔음 → loadWhy 로 구분
   ('저장된 토큰 없음' · '파일을 읽지 못함' · '다른 키의 것' · '토큰 기한(24시간) 지남 · MM-DD HH:MM에 끝남'). go test TestNHExpiredTokenReason 추가.
+- 2026-11-02 v1.0.4 — 사용자 제보(CUTROAD 에서): Spotlight 에 같은 앱이 두 개(응용 프로그램 + 백업 폴더) 보임. 업데이트 때 이전 버전을 보관하는
+  폴더를 `Support/backup.noindex/MFROAD.app`(.noindex = Spotlight 가 안 찾음)로 바꾸고, 바꾸기 · 되돌리기 뒤 `lsregister -u` 로 보관본을 macOS 목록에서 지움.
+  엔진이 켜질 때 예전 `Support/backup/MFROAD.app` 이 있으면 새 폴더로 옮김(migrateBackup). 맥 시험 A1b 추가. Windows 경로는 그대로.
 
 ## 결정 사항
 
