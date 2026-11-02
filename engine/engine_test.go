@@ -341,3 +341,41 @@ func TestNHTokenNotReissuedNeedlessly(t *testing.T) {
 		t.Fatalf("토큰 기록: %v", st["tokenLog"])
 	}
 }
+
+// 하루 지나 켜서 저장된 토큰이 끝났으면, 기록에 '저장된 토큰 없음'이 아니라 '기한 지남 · 언제 끝남'으로 남겨요
+func TestNHExpiredTokenReason(t *testing.T) {
+	dir := testApp(t)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "application/json")
+		if r.URL.Path == "/oauth2/token" {
+			w.Write([]byte(`{"access_token":"fresh","expires_in":86400}`))
+			return
+		}
+		w.Write([]byte(`{"Output_0":[{"acct_no":"111","acct_type":"01"}]}`))
+	}))
+	defer srv.Close()
+	t.Setenv("MFROAD_NH_BASE", srv.URL)
+	t.Setenv("MFROAD_TEST_SECRETS", "file")
+	secretSet("nh-appkey", "KEY7")
+	secretSet("nh-appsecret", "SEC7")
+
+	n := NewNH(dir)
+	n.LoadKeys() // 아직 파일 없음
+	n.Accounts()
+	st := n.Status()
+	if l := st["tokenLog"].([]string); len(l) != 1 || !strings.Contains(l[0], "저장된 토큰 없음") {
+		t.Fatalf("처음: %v", l)
+	}
+	// 어제 받은 토큰이 끝난 채로 저장되어 있다고 치고 다시 켬
+	n.mu.Lock()
+	n.token, n.tokenExp = "old", time.Now().Add(-2*time.Hour)
+	n.saveTokenLocked()
+	n.mu.Unlock()
+	n2 := NewNH(dir)
+	n2.LoadKeys()
+	n2.Accounts()
+	l := n2.Status()["tokenLog"].([]string)
+	if len(l) != 2 || !strings.Contains(l[1], "기한(24시간) 지남") || !strings.Contains(l[1], "에 끝남") {
+		t.Fatalf("하루 지나 켬: %v", l)
+	}
+}

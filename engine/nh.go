@@ -59,6 +59,7 @@ type NH struct {
 	issueMu  sync.Mutex      // 토큰은 한 번에 하나만 받아요 (여러 조회가 동시에 시작해도 알림은 한 번)
 	plain401 map[string]bool // 새 토큰으로도 401 이 오는 조회 → 토큰 문제가 아님 (다시는 토큰을 바꾸지 않음)
 	tokenLog []string        // 토큰을 새로 받은 때 · 이유 (최근 10개, 진단 정보에 보여 줘요)
+	loadWhy  string          // 켤 때 저장된 토큰을 쓰지 못한 이유 (기한 지남 · 다른 키 …), 다음 새 토큰의 이유로 써요
 
 	state    string // none | ok | error
 	err      string
@@ -214,20 +215,29 @@ type tokenFile struct {
 // loadToken: n.mu 를 잡은 채로 불러요
 func (n *NH) loadToken() {
 	var t tokenFile
+	n.loadWhy = "저장된 토큰 없음"
 	b, err := os.ReadFile(n.tokenPath())
-	if err != nil || json.Unmarshal(b, &t) != nil {
+	if err != nil {
+		return
+	}
+	if json.Unmarshal(b, &t) != nil {
+		n.loadWhy = "저장된 토큰 파일을 읽지 못함"
 		return
 	}
 	n.tokenLog = t.Log
 	if t.Scope != n.tokenScope() {
+		n.loadWhy = "저장된 토큰이 다른 키의 것"
 		return
 	}
 	n.plain401 = map[string]bool{}
 	for _, p := range t.Plain401 {
 		n.plain401[p] = true
 	}
-	if time.Unix(t.Exp, 0).After(time.Now().Add(time.Minute)) {
-		n.token, n.tokenExp = t.Token, time.Unix(t.Exp, 0)
+	exp := time.Unix(t.Exp, 0)
+	if t.Token != "" && exp.After(time.Now().Add(time.Minute)) {
+		n.token, n.tokenExp, n.loadWhy = t.Token, exp, ""
+	} else if t.Token != "" {
+		n.loadWhy = "토큰 기한(24시간) 지남 · " + exp.Format("01-02 15:04") + "에 끝남"
 	}
 }
 
@@ -304,9 +314,13 @@ func (n *NH) ensureToken(bad, why string) (string, error) {
 		return t, nil
 	}
 	if why == "" {
-		why = "저장된 토큰 없음"
-		if n.token != "" {
-			why = "토큰 기한(24시간) 지남"
+		switch {
+		case n.token != "":
+			why = "토큰 기한(24시간) 지남 · " + n.tokenExp.Format("01-02 15:04") + "에 끝남"
+		case n.loadWhy != "":
+			why = n.loadWhy
+		default:
+			why = "저장된 토큰 없음"
 		}
 	}
 	key, sec, base := n.appKey, n.secret, n.base()
@@ -319,7 +333,7 @@ func (n *NH) ensureToken(bad, why string) (string, error) {
 		return "", err
 	}
 	n.mu.Lock()
-	n.token, n.tokenExp = tok, exp
+	n.token, n.tokenExp, n.loadWhy = tok, exp, ""
 	n.noteIssueLocked(why)
 	n.saveTokenLocked()
 	n.mu.Unlock()
