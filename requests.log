@@ -1,0 +1,66 @@
+11-11 12:21:13 [2282] GET  /api/ping              200     0ms 
+11-11 12:21:13 [2282] GET  /api/ping              200     0ms 
+11-11 12:21:13 [2282] GET  /api/ping              200     0ms 
+11-11 12:21:13 [2282] POST /api/nh/keys           400     1ms 
+11-11 12:21:14 [2282] 나무증권 토큰 새로 받음 · 키를 새로 넣음
+11-11 12:21:14 [2282] POST /api/nh/keys           200   224ms 
+11-11 12:21:14 [2282] GET  /api/portfolio         200     0ms 
+11-11 12:21:15 [2282] 화면 열림 · Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) MFROADShell/1.0.5
+11-11 12:21:15 [2282] GET  /                      200    21ms 
+11-11 12:21:15 [2282] GET  /css/app.css           200     0ms 
+11-11 12:21:15 [2282] GET  /js/app.js             200     0ms 
+11-11 12:21:15 [2282] GET  /api/settings          200     0ms 
+11-11 12:21:15 [2282] GET  /api/portfolio         200     0ms 
+11-11 12:21:15 [2282] GET  /api/portfolio         200     0ms 
+11-11 12:21:15 [2282] POST /api/account/save      200     0ms 
+11-11 12:21:15 [2282] POST /api/account/save      200     0ms 
+11-11 12:21:15 [2282] GET  /api/portfolio         200     0ms 
+11-11 12:21:15 [2282] GET  /api/history           200     0ms 
+11-11 12:21:15 [2282] POST /api/lot/save          200     0ms 
+11-11 12:21:15 [2282] POST /api/lot/save          200     0ms 
+11-11 12:21:15 [2282] POST /api/lot/save          200     0ms 
+11-11 12:21:15 [2282] POST /api/lot/save          200     0ms 
+11-11 12:21:15 [2282] POST /api/lot/save          200     0ms 
+11-11 12:21:15 [2282] POST /api/lot/save          200     0ms 
+11-11 12:21:16 [2282] GET  /api/portfolio         200     0ms 
+11-11 12:21:16 [2282] GET  /api/portfolio         200     0ms 
+11-11 12:21:23 [2282] GET  /api/history           200     0ms 
+11-11 12:21:23 [2282] GET  /api/history           200     0ms 
+11-11 12:21:23 [2282] GET  /api/history           200     0ms 
+11-11 12:21:23 [2282] GET  /api/history           200     0ms 
+11-11 12:21:25 [2736] GET  /api/portfolio         200     0ms 
+11-11 12:21:29 [2736] GET  /api/ping              200     0ms 
+11-11 12:21:32 [2736] POST /api/quit              200     0ms 
+11-11 12:21:33 [2930] GET  /api/ping              200     0ms 
+11-11 12:21:34 [2930] 화면 열림 · Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) MFROADShell/1.0.5
+11-11 12:21:34 [2930] GET  /                      200     0ms 
+11-11 12:21:34 [2930] GET  /css/app.css           200     0ms 
+11-11 12:21:34 [2930] GET  /js/app.js             200     0ms 
+11-11 12:21:34 [2930] GET  /api/settings          200     0ms 
+11-11 12:21:34 [2930] GET  /api/portfolio         200     0ms 
+11-11 12:21:35 [2930] GET  /api/history           200     0ms 
+11-11 12:21:41 [2930] POST /api/quit              200     0ms 
+11-11 12:21:42 [3066] 화면 열림 · Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) MFROADShell/1.0.5
+11-11 12:21:42 [3066] GET  /                      200     0ms 
+11-11 12:21:42 [3066] GET  /css/app.css           200     0ms 
+11-11 12:21:42 [3066] GET  /js/app.js             200     0ms 
+11-11 12:21:42 [3066] GET  /api/ping              200     0ms 
+11-11 12:21:42 [3066] GET  /api/settings          200     0ms 
+11-11 12:21:45 [3245] 화면 열림 · Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) MFROADShell/1.0.5
+11-11 12:21:45 [3245] GET  /                      200     0ms 
+11-11 12:21:45 [3245] GET  /css/app.css           200     0ms 
+11-11 12:21:45 [3245] GET  /js/app.js             200     0ms 
+11-11 12:21:45 [3245] GET  /api/settings          200     0ms 
+11-11 12:21:45 [3245] GET  /api/portfolio         200     0ms 
+11-11 12:21:45 [3245] GET  /api/ping              200     0ms 
+11-11 12:21:45 [3245] GET  /api/history           200     0ms 
+11-11 12:21:45 [3245] POST /api/update/restart    200     0ms 
+11-11 12:21:46 [3267] 화면 열림 · Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) MFROADShell/1.0.5
+11-11 12:21:46 [3267] GET  /                      200     0ms 
+11-11 12:21:46 [3267] GET  /css/app.css           200     0ms 
+11-11 12:21:46 [3267] GET  /js/app.js             200     0ms 
+11-11 12:21:46 [3267] GET  /api/settings          200     0ms 
+11-11 12:21:46 [3267] GET  /api/portfolio         200     0ms 
+11-11 12:21:46 [3267] GET  /api/history           200     0ms 
+11-11 12:21:48 [3267] GET  /api/ping              200     0ms 
+11-11 12:21:49 [3267] POST /api/quit              200     0ms 

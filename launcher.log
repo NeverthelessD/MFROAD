@@ -1,0 +1,82 @@
+11-11 12:21:12 [앱 2270] 시작 v1.0.5 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+11-11 12:21:12 [앱 2270] 엔진 준비 (v1.0.5)
+11-11 12:21:12 [앱 2270] 엔진 켬 (지킴이 pid 2281)
+11-11 12:21:12 [지킴이 2281] 시작 · 엔진 1.0.5 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+11-11 12:21:12 [지킴이 2281] 엔진 켬 (pid 2282, 포트 자동)
+11-11 12:21:13 [앱 2270] 엔진 준비됨 (포트 47931)
+11-11 12:21:25 [지킴이 2281] ⚠️ 엔진이 갑자기 꺼졌어요: 종료 코드 2, 12s 동안 실행
+----- 엔진 마지막 출력 -----
+2026/11/11 12:21:12 이전 버전 보관 폴더를 Spotlight 에서 숨겼어요 (/Users/runner/Library/Application Support/MFROAD/backup.noindex/MFROAD.app)
+2026/11/11 12:21:12 MFROAD 1.0.5 listening on 47931 (pid 2282, 지킴이 true)
+2026/11/11 12:21:13 master: 139 stocks
+2026/11/11 12:21:13 nh: new access token issued (expires in 86400s)
+2026/11/11 12:21:14 nh: keys saved to keychain (…a91c)
+2026/11/11 12:21:15 nh import: 1 accounts, 3 holdings, 0 errors
+2026/11/11 12:21:16 nh import: 1 accounts, 3 holdings, 0 errors
+SIGSEGV: segmentation violation
+PC=0x18e647d04 m=0 sigcode=2 addr=0x0
+
+goroutine 0 gp=0x103138740 m=0 mp=0x1031391c0 [idle]:
+runtime.kevent(0x5, 0x0, 0x0, 0x16d518ff0, 0x40, 0x16d518fc0)
+	runtime/sys_darwin.go:498 +0x20 fp=0x16d518f70 sp=0x16d518f50 pc=0x10293ddd0
+runtime.netpoll(0xbe2447a)
+	runtime/netpoll_kqueue.go:110 +0xf8 fp=0x16d519800 sp=0x16d518f70 pc=0x102918d88
+runtime.findRunnable()
+	runtime/proc.go:3657 +0x994 fp=0x16d519970 sp=0x16d519800 pc=0x102925864
+runtime.schedule()
+	runtime/proc.go:4072 +0x94 fp=0x16d5199b0 sp=0x16d519970 pc=0x102927384
+runtime.park_m(0x14000003880)
+	runtime/proc.go:4201 +0x2b0 fp=0x16d519a10 sp=0x16d5199b0 pc=0x102927860
+runtime.mcall()
+	runtime/asm_arm64.s:193 +0x54 fp=0x16d519a20 sp=0x16d519a10 pc=0x102957764
+
+goroutine 1 gp=0x140000021c0 m=nil [IO wait]:
+runtime.gopark(0x0?, 0x0?, 0x0?, 0x0?, 0x0?)
+	runtime/proc.go:435 +0xc8 fp=0x140002317a0 sp=0x14000231780 pc=0x102951c58
+runtime.netpollblock(0x14000231838?, 0x29a6290?, 0x1?)
+	runtime/netpoll.go:575 +0x158 fp=0x140002317e0 sp=0x140002317a0 pc=0x1029184c8
+internal/poll.runtime_pollWait(0x1033e73d0, 0x72)
+… (350줄 생략) …
+r26     0x102ec9510
+r27     0x1030c4000
+r28     0x103138740
+r29     0x16d518ee8
+lr      0x10295acf8
+sp      0x16d518ef0
+pc      0x18e647d04
+fault   0x0
+----------------------------
+11-11 12:21:25 [지킴이 2281] 엔진 켬 (pid 2736, 포트 47931)
+11-11 12:21:32 [앱 2270] 종료: 엔진을 끄는 중
+11-11 12:21:32 [지킴이 2281] 엔진이 정상적으로 끝났어요 (7s 동안 실행)
+11-11 12:21:32 [앱 2270] 종료 완료
+11-11 12:21:33 [앱 2922] 시작 v1.0.5 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+11-11 12:21:33 [앱 2922] 엔진 켬 (지킴이 pid 2929)
+11-11 12:21:33 [지킴이 2929] 시작 · 엔진 1.0.5 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+11-11 12:21:33 [지킴이 2929] 엔진 켬 (pid 2930, 포트 자동)
+11-11 12:21:33 [앱 2922] 엔진 준비됨 (포트 47931)
+11-11 12:21:41 [지킴이 2929] 엔진이 정상적으로 끝났어요 (8s 동안 실행)
+11-11 12:21:41 [앱 2922] 엔진이 끝나서 앱도 닫아요 (코드 0)
+11-11 12:21:42 [앱 3026] 시작 v1.0.5 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+11-11 12:21:42 [앱 3026] 엔진 켬 (지킴이 pid 3064)
+11-11 12:21:42 [지킴이 3064] 시작 · 엔진 1.0.5 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+11-11 12:21:42 [지킴이 3064] 엔진 켬 (pid 3066, 포트 자동)
+11-11 12:21:42 [앱 3026] 엔진 준비됨 (포트 47931)
+11-11 12:21:44 [지킴이 3064] MFROAD 앱이 사라짐 → 엔진을 끄고 지킴이도 끝냅니다
+11-11 12:21:44 [지킴이 3064] 엔진을 껐어요 (신호 terminated 로 꺼짐)
+11-11 12:21:45 [앱 3234] 시작 v1.0.5 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+11-11 12:21:45 [앱 3234] 엔진 켬 (지킴이 pid 3244)
+11-11 12:21:45 [지킴이 3244] 시작 · 엔진 1.0.5 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+11-11 12:21:45 [지킴이 3244] 엔진 켬 (pid 3245, 포트 자동)
+11-11 12:21:45 [앱 3234] 엔진 준비됨 (포트 47931)
+11-11 12:21:45 [지킴이 3244] 엔진이 정상적으로 끝났어요 (1s 동안 실행)
+11-11 12:21:45 [앱 3234] 새 버전으로 다시 열어요
+11-11 12:21:46 [앱 3264] 업데이트 뒤 다시 열림
+11-11 12:21:46 [앱 3264] 시작 v1.0.5 · macOS 버전 15.8.2(빌드 24H232) · /Applications/MFROAD.app
+11-11 12:21:46 [앱 3264] 엔진 켬 (지킴이 pid 3266)
+11-11 12:21:46 [지킴이 3266] 시작 · 엔진 1.0.5 · darwin/arm64 · Dock 앱(MFROAD.app)이 켬
+11-11 12:21:46 [지킴이 3266] 엔진 켬 (pid 3267, 포트 자동)
+11-11 12:21:46 [앱 3264] 엔진 준비됨 (포트 47931)
+11-11 12:21:49 [앱 3264] 종료: 엔진을 끄는 중
+11-11 12:21:49 [지킴이 3266] 엔진이 정상적으로 끝났어요 (3s 동안 실행)
+11-11 12:21:49 [앱 3264] 종료 완료
