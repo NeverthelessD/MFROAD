@@ -379,3 +379,66 @@ func TestNHExpiredTokenReason(t *testing.T) {
 		t.Fatalf("하루 지나 켬: %v", l)
 	}
 }
+
+// ---------------------------------------------------------------- 총자산 기록 (오늘 · 주간 · 월간 · 연간)
+
+func TestHistoryRanges(t *testing.T) {
+	sup := t.TempDir()
+	dir := sup + "/history"
+	os.MkdirAll(dir, 0o755)
+	now := time.Now()
+	// 1.0.4 까지의 파일(v 만 있음): 3일 전 · 10일 전
+	for _, ago := range []int{3, 10} {
+		d := now.AddDate(0, 0, -ago)
+		day := d.In(kst).Format("2006-01-02")
+		pts := []map[string]any{{"t": d.Unix() - 60, "v": 1000.0}, {"t": d.Unix(), "v": 1100.0 + float64(ago)}}
+		b, _ := json.Marshal(pts)
+		os.WriteFile(dir+"/"+day+".json", b, 0o600)
+	}
+	h := NewHistory(sup)
+	if len(h.daily) != 2 || h.daily[0].V != 1110 || h.daily[1].V != 1103 || h.daily[0].S != nil {
+		t.Fatalf("backfill: %+v", h.daily)
+	}
+	h.Add(now.Add(-2*time.Minute), 700, 300)
+	h.Add(now, 800, 400)
+	if pts := h.Range("day", 500); len(pts) != 2 || pts[1].V != 1200 || *pts[1].S != 800 || *pts[1].C != 400 {
+		t.Fatalf("day: %+v", pts)
+	}
+	// 주간: 3일 전 2점 + 오늘 2점 (10일 전은 빠짐)
+	if pts := h.Range("week", 500); len(pts) != 4 || pts[0].V != 1000 || pts[3].V != 1200 {
+		t.Fatalf("week: %d %+v", len(pts), pts)
+	}
+	// 월간: 하루 한 점 — 10일 전 · 3일 전 · 오늘(마지막 값)
+	m := h.Range("month", 500)
+	if len(m) != 3 || m[2].V != 1200 || m[0].V != 1110 {
+		t.Fatalf("month: %+v", m)
+	}
+	if y := h.Range("year", 500); len(y) != 3 {
+		t.Fatalf("year: %+v", y)
+	}
+	// 다시 켜도 그대로, daily.json 은 정리되지 않음
+	for i := 0; i < 12; i++ {
+		day := now.AddDate(0, 0, -20-i).In(kst).Format("2006-01-02")
+		os.WriteFile(dir+"/"+day+".json", []byte("[]"), 0o600)
+	}
+	h.prune()
+	if _, err := os.Stat(dir + "/daily.json"); err != nil {
+		t.Fatal("daily.json 이 지워졌어요")
+	}
+	if n := len(h.dayFiles()); n != histKeepDays {
+		t.Fatalf("남은 분 단위 파일 %d개", n)
+	}
+	h2 := NewHistory(sup)
+	if len(h2.daily) != 3 || h2.daily[2].V != 1200 || *h2.daily[2].C != 400 {
+		t.Fatalf("reload: %+v", h2.daily)
+	}
+	// 많은 점은 줄이기
+	var many []HistPoint
+	for i := 0; i < 5000; i++ {
+		many = append(many, HistPoint{T: int64(i * 60), V: float64(i)})
+	}
+	th := thin(many, 400)
+	if len(th) > 402 || th[0].V != 0 || th[len(th)-1].V != 4999 {
+		t.Fatalf("thin: %d", len(th))
+	}
+}

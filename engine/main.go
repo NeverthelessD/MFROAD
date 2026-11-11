@@ -374,7 +374,13 @@ func (a *App) routes() http.Handler {
 	})
 	api("/api/poll", a.handlePoll)
 	api("/api/history", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, map[string]any{"ok": true, "today": a.hist.Today(400)})
+		rg := r.URL.Query().Get("range")
+		switch rg {
+		case "week", "month", "year":
+		default:
+			rg = "day"
+		}
+		writeJSON(w, map[string]any{"ok": true, "range": rg, "points": a.hist.Range(rg, 500)})
 	})
 	api("/api/settings", a.handleSettings)
 

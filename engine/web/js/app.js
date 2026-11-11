@@ -8,7 +8,7 @@ const S = {
   pf: { accounts: [], lots: [], rev: 0 },
   quotes: {}, qrev: '', rev: null,
   nh: { configured: false }, market: {}, update: {}, open: false, master: false,
-  hist: [], tab: 'all', expanded: new Set(),
+  hist: [], histRange: 'day', range: 'day', hover: null, chart: null, tab: 'all', expanded: new Set(),
   prev: {}, flash: {}, lastQuoteAt: 0, fails: 0, build: '',
 };
 
@@ -166,6 +166,7 @@ function render() {
   if (show('coin')) html += groupHTML('coin', coins);
   html += `</section>`;
   main.innerHTML = html;
+  applyHover();
 }
 
 function emptyHTML() {
@@ -181,20 +182,87 @@ function emptyHTML() {
   </section>`;
 }
 
-function sparkHTML() {
-  const pts = S.hist || [];
+// ---------------------------------------------------------------- 자산 변동 그래프 (오늘 · 주간 · 월간 · 연간 × 전체 · 국내주식 · 코인)
+
+const RANGES = [['day', '오늘'], ['week', '주간'], ['month', '월간'], ['year', '연간']];
+const RANGE_DAYS = { week: 7, month: 30, year: 365 };
+
+function hm(sec) { const d = new Date(sec * 1000); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+function md(sec) {
+  const d = new Date(sec * 1000);
+  const s = `${d.getMonth() + 1}월 ${d.getDate()}일`;
+  return d.getFullYear() === new Date().getFullYear() ? s : `${d.getFullYear()}년 ${s}`;
+}
+function sameDay(a, b) { return new Date(a * 1000).toDateString() === new Date(b * 1000).toDateString(); }
+
+// 지금 보는 탭에 맞는 값: 전체 v · 국내주식 s · 코인 c (1.0.4 까지의 기록에는 v 만 있어요)
+function chartSeries() {
+  const k = S.tab === 'stock' ? 's' : S.tab === 'coin' ? 'c' : 'v';
+  return (S.histRange === S.range ? S.hist : []).filter((p) => typeof p[k] === 'number').map((p) => ({ t: p.t, v: p[k] }));
+}
+
+function chartHTML() {
+  const r = S.range;
+  const seg = `<div class="seg small" role="group" aria-label="그래프 기간">${RANGES.map(([k, l]) =>
+    `<button type="button" data-range="${k}" aria-pressed="${k === r}">${l}</button>`).join('')}</div>`;
+  const pts = chartSeries();
+  const what = S.tab === 'stock' ? '국내주식' : S.tab === 'coin' ? '코인' : '총자산';
+  S.chart = null;
   if (pts.length < 2) {
-    return `<svg class="spark" viewBox="0 0 600 72" preserveAspectRatio="none" aria-hidden="true"><path class="ln wait" d="M0,40 L600,40"></path></svg>
-      <div class="spark-cap">오늘 그래프는 1분마다 한 점씩 쌓여요</div>`;
+    let cap;
+    if (S.histRange !== r) cap = '그래프를 불러오는 중…';
+    else if (S.tab !== 'all' && S.hist.length >= 2) cap = `${what}만 따로 보는 그래프는 이번 버전부터 쌓여요`;
+    else if (r === 'day') cap = '오늘 그래프는 1분마다 한 점씩 쌓여요';
+    else if (r === 'week') cap = '주간 그래프는 앱이 켜져 있는 동안 1분마다 한 점씩 쌓여요';
+    else cap = `${r === 'month' ? '월간' : '연간'} 그래프는 하루에 한 점씩 쌓여요`;
+    return `<div class="chart"><div class="chart-head">${seg}</div>
+      <svg class="spark" viewBox="0 0 600 72" preserveAspectRatio="none" aria-hidden="true"><path class="ln wait" d="M0,40 L600,40"></path></svg>
+      <div class="spark-cap">${esc(cap)}</div></div>`;
   }
   const vs = pts.map((p) => p.v);
   let lo = Math.min(...vs), hi = Math.max(...vs);
-  if (hi - lo < hi * 0.0005) { const m = (hi + lo) / 2; lo = m * 0.9995; hi = m * 1.0005; }
-  const t0 = pts[0].t, t1 = pts[pts.length - 1].t || t0 + 1;
+  if (hi - lo < Math.max(1, hi) * 0.0005) { const m = (hi + lo) / 2; lo = m * 0.9995 - 1; hi = m * 1.0005 + 1; }
+  const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
   const x = (t) => ((t - t0) / Math.max(1, t1 - t0)) * 600;
   const y = (v) => 64 - ((v - lo) / (hi - lo)) * 56;
   const d = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
-  return `<svg class="spark" viewBox="0 0 600 72" preserveAspectRatio="none" role="img" aria-label="오늘 총자산 그래프"><path class="area" d="${d} L600,72 L0,72 Z"></path><path class="ln" d="${d}"></path></svg>`;
+  S.chart = { pts: pts.map((p) => ({ ...p, px: x(p.t) / 6, py: (y(p.v) / 72) * 100 })), daily: r === 'month' || r === 'year' };
+
+  let chip = '';
+  if (r !== 'day') {
+    const a = pts[0].v, b = pts[pts.length - 1].v, ch = b - a;
+    chip = `<span class="chip ${tone(ch)}"><span class="k">${esc(md(t0))} 이후</span>${sWon(ch)}원 (${sPct(a > 0 ? (ch / a) * 100 : 0)})</span>`;
+  }
+  const left = r === 'day' ? hm(t0) : md(t0);
+  const right = r === 'day' ? hm(t1) : sameDay(t1, Date.now() / 1000) ? '오늘' : md(t1);
+  let mid = '';
+  if (RANGE_DAYS[r]) {
+    const span = r === 'week' ? Math.round((t1 - t0) / 86400) : pts.length;
+    if (r !== 'week' && span < RANGE_DAYS[r]) mid = `${span}일치 기록`;
+  }
+  const label = `${{ day: '오늘', week: '주간', month: '월간', year: '연간' }[r]} ${what} 그래프`;
+  return `<div class="chart"><div class="chart-head">${seg}${chip}</div>
+    <div class="plot" data-plot>
+      <svg class="spark" viewBox="0 0 600 72" preserveAspectRatio="none" role="img" aria-label="${label}"><path class="area" d="${d} L600,72 L0,72 Z"></path><path class="ln" d="${d}"></path></svg>
+      <span class="hdot" hidden></span><span class="htip" hidden></span>
+    </div>
+    <div class="axis"><span>${esc(left)}</span><span>${esc(mid)}</span><span>${esc(right)}</span></div></div>`;
+}
+
+// 그래프 위에 마우스를 올리면 그때의 금액을 보여 줘요 (render 뒤에도 유지)
+function applyHover() {
+  const plot = $('[data-plot]');
+  if (!plot || !S.chart || S.hover == null) return;
+  const { pts, daily } = S.chart;
+  let best = pts[0];
+  for (const p of pts) if (Math.abs(p.px - S.hover) < Math.abs(best.px - S.hover)) best = p;
+  const dot = $('.hdot', plot), tip = $('.htip', plot);
+  dot.hidden = tip.hidden = false;
+  dot.style.left = tip.style.left = best.px + '%';
+  dot.style.top = best.py + '%';
+  tip.classList.toggle('right', best.px > 70);
+  tip.classList.toggle('left', best.px < 30);
+  tip.innerHTML = `<span class="k">${esc(daily ? md(best.t) : `${md(best.t)} ${hm(best.t)}`)}</span><b>${won(best.v)}원</b>`;
 }
 
 function totalHTML(t, ts, tc) {
@@ -217,7 +285,7 @@ function totalHTML(t, ts, tc) {
       <span class="chip ${tone(t.today)}"><span class="k">오늘</span>${sWon(t.today)}원 (${sPct(t.todayP)})</span>
       ${miss}
     </div>
-    ${S.tab === 'all' ? sparkHTML() : ''}
+    ${chartHTML()}
     ${S.tab === 'all' ? allocBar : ''}
   </div>`;
 }
@@ -338,7 +406,12 @@ async function loadPortfolio() {
   S.rev = S.pf.rev;
 }
 async function loadHistory() {
-  try { S.hist = (await api('/api/history')).today || []; } catch (e) { /* 다음에 */ }
+  const r = S.range;
+  try {
+    const d = await api(`/api/history?range=${r}`);
+    if (r !== S.range) return; // 그새 다른 기간을 골랐어요
+    S.hist = d.points || []; S.histRange = r;
+  } catch (e) { /* 다음에 */ }
 }
 
 let polling = false;
@@ -966,6 +1039,15 @@ $('#btnRefresh').onclick = async () => {
 };
 
 document.addEventListener('click', async (e) => {
+  const rb = e.target.closest('button[data-range]');
+  if (rb && !rb.closest('.dialog')) {
+    if (rb.dataset.range === S.range) return;
+    S.range = rb.dataset.range; S.hover = null;
+    rememberUI('histRange', S.range);
+    render();
+    await loadHistory(); render();
+    return;
+  }
   const t = e.target.closest('[data-act]');
   if (!t || t.closest('.dialog')) return;
   const act = t.dataset.act;
@@ -988,6 +1070,14 @@ document.addEventListener('click', async (e) => {
   }
 });
 
+document.addEventListener('mousemove', (e) => {
+  const plot = e.target.closest && e.target.closest('[data-plot]');
+  if (!plot) { if (S.hover != null) { S.hover = null; $$('.hdot, .htip').forEach((x) => { x.hidden = true; }); } return; }
+  const b = plot.getBoundingClientRect();
+  S.hover = Math.max(0, Math.min(100, ((e.clientX - b.left) / b.width) * 100));
+  applyHover();
+});
+
 // 창이 다시 보이면 바로 새로 묻기
 document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
 
@@ -999,6 +1089,7 @@ async function start() {
     S.settings = await api('/api/settings');
     S.build = S.settings.build;
     S.tab = ['all', 'stock', 'coin'].includes(S.settings.ui.tab) ? S.settings.ui.tab : 'all';
+    S.range = RANGES.some(([k]) => k === S.settings.ui.histRange) ? S.settings.ui.histRange : 'day';
     applyTheme();
     await loadPortfolio();
   } catch (e) { $('#offline').hidden = false; }
@@ -1011,7 +1102,7 @@ async function start() {
     setTimeout(loop, S.settings.refresh === 'live' ? 1000 : 2000);
   };
   setTimeout(loop, 1000);
-  setInterval(loadHistory, 60_000);
+  setInterval(async () => { await loadHistory(); render(); }, 60_000);
   setInterval(() => { if (Object.keys(S.flash).length) { const now = Date.now(); let any = false; for (const k in S.flash) if (now - S.flash[k].at > 1300) { delete S.flash[k]; any = true; } if (any) $$('.price.f-up, .price.f-down').forEach((p) => p.classList.remove('f-up', 'f-down')); } }, 400);
 }
 start();

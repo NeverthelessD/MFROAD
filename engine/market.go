@@ -6,7 +6,7 @@ package main
 //   주식  나무증권 연결 → 보유 종목 현재가를 돌아가며(초당 4회 안에서), 연결 안 됨 → 종목 목록의 전일 종가
 //         장이 닫힌 시간(평일 20:10~07:50 · 주말)에는 5분마다만
 //   자동 불러오기  나무증권 계좌 잔고 → 그 계좌의 기록을 통째로 바꿈 (켤 때 · 10분마다 · 버튼)
-//   기록  1분마다 총자산을 history 에 남겨 오늘 그래프를 그려요
+//   기록  1분마다 총자산(국내주식 · 코인 따로)을 history 에 남겨 오늘 · 주간 · 월간 · 연간 그래프를 그려요
 
 import (
 	"fmt"
@@ -353,28 +353,31 @@ func (a *App) doImport() (int, error) {
 func (a *App) historyLoop() {
 	time.Sleep(20 * time.Second)
 	for {
-		if v, ok := a.totalValue(); ok && v > 0 {
-			a.hist.Add(time.Now(), v)
+		if st, co, ok := a.totalValue(); ok && st+co > 0 {
+			a.hist.Add(time.Now(), st, co)
 		}
 		time.Sleep(time.Minute - time.Duration(time.Now().Second())*time.Second)
 	}
 }
 
-// totalValue: 모든 보유 종목의 시세가 있을 때만 총자산을 계산해요
-func (a *App) totalValue() (float64, bool) {
+// totalValue: 모든 보유 종목의 시세가 있을 때만 국내주식 · 코인 금액을 계산해요
+func (a *App) totalValue() (stock, coin float64, ok bool) {
 	pf := a.pf.Snapshot()
 	if len(pf.Lots) == 0 {
-		return 0, false
+		return 0, 0, false
 	}
-	total := 0.0
 	for _, l := range pf.Lots {
 		q := a.mk.Get(l.Kind, l.Code)
 		if q == nil {
-			return 0, false
+			return 0, 0, false
 		}
-		total += l.Qty * q.Price
+		if l.Kind == "coin" {
+			coin += l.Qty * q.Price
+		} else {
+			stock += l.Qty * q.Price
+		}
 	}
-	return total, true
+	return stock, coin, true
 }
 
 // ---------------------------------------------------------------- 화면이 1초마다 묻는 곳

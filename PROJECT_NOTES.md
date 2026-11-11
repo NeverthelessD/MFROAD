@@ -44,6 +44,14 @@ My Finance ROAD. 국내주식 · 코인 자산 확인 앱. macOS (Apple Silicon)
 - 2026-11-02 v1.0.4 — 사용자 제보(CUTROAD 에서): Spotlight 에 같은 앱이 두 개(응용 프로그램 + 백업 폴더) 보임. 업데이트 때 이전 버전을 보관하는
   폴더를 `Support/backup.noindex/MFROAD.app`(.noindex = Spotlight 가 안 찾음)로 바꾸고, 바꾸기 · 되돌리기 뒤 `lsregister -u` 로 보관본을 macOS 목록에서 지움.
   엔진이 켜질 때 예전 `Support/backup/MFROAD.app` 이 있으면 새 폴더로 옮김(migrateBackup). 맥 시험 A1b 추가. Windows 경로는 그대로.
+- 2026-11-11 v1.0.5 — 사용자 요청: 메인 화면 자산 변동 그래프를 **오늘 · 주간 · 월간 · 연간**으로 골라 보기 + **전체 · 국내주식만 · 코인만**.
+  사용자 선택: 과거를 추정으로 채우지 않고 **실제 기록만** 씀(월간 · 연간은 날마다 채워짐).
+  엔진: 점마다 v(전체) · s(국내주식) · c(코인)를 적음. 하루 한 점(그날 마지막 값)을 `history/daily.json` 에 영구 보관,
+  처음 켤 때 남아 있던 분 단위 파일로 daily 를 채움(backfillDaily). 분 단위 파일은 8개(주간을 덮도록), prune 이 daily.json 을 지우지 않게 날짜 이름만 셈.
+  `/api/history?range=day|week|month|year` → points. 주간 = 지난 7일 분 단위(시간 칸마다 줄임), 월간 30일 · 연간 365일 = 하루 한 점.
+  화면: 그래프가 모든 탭에 나오고 **탭(전체/국내주식/코인)을 따라** 값이 바뀜. 총 자산 카드 안에 기간 버튼(기억함 ui.histRange) ·
+  '○월 ○일 이후 ±금액(%)' · 아래 날짜(시작 · N일치 기록 · 오늘) · 마우스를 올리면 그때 금액. 1.0.4 까지의 점에는 s/c 가 없어 국내주식/코인 탭은 이번 버전부터 쌓임.
+  go test TestHistoryRanges · 맥 시험 H1 추가. 리눅스에서 가짜 기록(200일)으로 라이트/다크/좁은 창 스크린샷 확인.
 
 ## 결정 사항
 
@@ -61,9 +69,11 @@ My Finance ROAD. 국내주식 · 코인 자산 확인 앱. macOS (Apple Silicon)
   App Key/Secret 은 **맥 키체인**에만 저장(`/usr/bin/security`, 비밀값은 명령줄이 아닌 표준 입력으로, 16진수로 넘김). 화면에는 App Key 끝 4자리만.
   접근 토큰은 24시간 유효하고 **새로 받을 때마다 사용자에게 보안 알림**이 가므로 `Support/nh-token.json`(0600)에 저장해 다시 씀.
   토큰은 '만료/무효'가 분명할 때만 버리고, 한 번에 하나만 받고, 받을 때마다 이유를 남김(설정 · 진단 정보).
-- 데이터: `~/Library/Application Support/MFROAD/` — portfolio.json(계좌 · 기록), settings.json, history/YYYY-MM-DD.json(오늘 총자산 1분 기록, 7일치),
+- 데이터: `~/Library/Application Support/MFROAD/` — portfolio.json(계좌 · 기록), settings.json, history/YYYY-MM-DD.json(총자산 1분 기록 v·s·c, 8일치) · history/daily.json(하루 한 점, 계속 보관),
   cache/(종목 마스터 · 업비트 마켓 목록, 12시간), 기록 파일들(launcher.log · requests.log · engine.log …).
 - 업데이트: 이 저장소의 `releases/latest.json` 을 켤 때 + 6시간마다 확인, 자동 설치(기본 켬), 수동 '업데이트 확인', 버전 표시, 이전 버전 되돌리기.
+- 자산 변동 그래프: 실제로 적은 값만 씀(과거 시세로 추정해 채우지 않음 — 2026-11-11 사용자 선택). 앱이 꺼져 있던 동안은 앞뒤 점을 선으로 이음.
+  기간 변동은 그래프 첫 점 → 마지막 점 금액 차이(종목을 새로 넣거나 빼면 그만큼 함께 바뀜).
 - 화면 모드: 맥 설정 따름(기본) / 라이트 / 다크. 화면 아래 `made by. Nevertheless_D`.
 - 사용자에게 보이는 곳에는 GitHub 나 저장소 이름을 쓰지 않음("새 버전이 나오면 앱이 알아서 받아요").
 - 커밋 작성자: `Nevertheless_D <NeverthelessD@users.noreply.github.com>`
@@ -74,7 +84,7 @@ My Finance ROAD. 국내주식 · 코인 자산 확인 앱. macOS (Apple Silicon)
   상승 빨강 #D02A3A(다크 #FF6B76) · 하락 파랑 #1F5BD0(다크 #72A6FF), 늘 ▲▼ · +/− 함께. 코인 비율 막대 #A3AAB6(다크 #4B5361).
 - 글꼴: 본문 IBM Plex Sans KR, 로고 · 큰 숫자 Space Grotesk(숫자 폭 고정 tabular-nums). 둘 다 SIL OFL, 앱 안에 넣음.
 - 아이콘: 숲 녹색 둥근 사각형 + 흰 꺾은선 화살표(위로) + 점점 높아지는 반투명 막대 3개(주가 차트 느낌). 다크용은 어두운 바탕 + 녹색 선.
-- 메인: 위 줄(로고 · 전체/국내주식/코인 탭 · 실시간 시각 · 새로고침 · 설정 · 종목 추가) → 총 자산 카드(총액 · 그 아래 작게 '평균 단가 기준' 금액 · 총 손익 · 오늘 · 오늘 그래프 · 주식/코인 비율 막대)
+- 메인: 위 줄(로고 · 전체/국내주식/코인 탭 · 실시간 시각 · 새로고침 · 설정 · 종목 추가) → 총 자산 카드(총액 · 그 아래 작게 '평균 단가 기준' 금액 · 총 손익 · 오늘 · 자산 그래프[오늘/주간/월간/연간] · 주식/코인 비율 막대)
   + 국내주식 · 코인 카드 → 보유 종목 표(종목 · 현재가/전일 대비 · 보유 수량 · 평균 단가 · 평가 금액 · 손익), 방금 바뀐 가격은 잠깐 색 깜빡임.
 - 종목 추가: 국내주식/코인 전환 · 검색 · 결과 4개 · (추가) 계좌 고르기 · 보유 수량 · 평균 매수가 · 현재가/예상 평가/예상 손익 · 나무증권 계좌에서 한 번에 불러오기.
 - 설정: 나무증권 연결(키 끝자리 · 변경 · 키체인 안내 · 토큰 남은 시간 · 연결 확인 · 자동 불러오기) · 코인(업비트, 키 없음) · 시세 갱신(실시간/5초/30초/1분)
@@ -97,7 +107,7 @@ engine/nh.go           나무증권 PLUG: 토큰(파일 캐시) · 초당 4회 �
 engine/secrets.go      키체인(/usr/bin/security, 표준 입력 + 16진수) · 시험용 파일(MFROAD_TEST_SECRETS=file) · Support/test.json(시험 주소)
 engine/master.go       종목 마스터 m_new_stock.mst(237바이트 · CP949) 12시간 캐시 · 검색(이름 · 초성 · 코드 · 영문) · 전일 종가
 engine/upbit.go        업비트 마켓 목록(12시간) · 현재가(한 번에 여러 개) · 검색
-engine/history.go      history/YYYY-MM-DD.json (1분 한 점, 7일)
+engine/history.go      history/YYYY-MM-DD.json (1분 한 점, 8일) · daily.json (하루 한 점, 영구) · Range(day/week/month/year)
 engine/api.go          /api/search · /api/quote · /api/nh/keys · forget · test · sync
 engine/update.go       releases/latest.json → zip · sha256 · version.txt · 백업 · 되돌리기 · restart-requested
 engine/web/            index.html · css/app.css(디자인 토큰) · js/app.js(화면 전체) · fonts/(IBM Plex Sans KR 4굵기 · Space Grotesk)

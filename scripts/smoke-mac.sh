@@ -105,6 +105,8 @@ check "L3 보유 7종목 시세를 모두 받음 (${Q:-0}개)" test "${Q:-0}" = 
 sleep 3
 screencapture -x "$OUT/shot-app.png"
 check "L4 화면이 앱 창(WKWebView)에서 열림" grep -q "MFROADShell" "$SUP/requests.log"
+HR=$(for r in day week month year; do api "/api/history?range=$r" | json "d['range']"; done | tr '\n' ' ')
+check "H1 자산 그래프 기간(오늘 · 주간 · 월간 · 연간)을 엔진이 알아들음 ($HR)" test "$HR" = "day week month year "
 T1=$(tokens_issued)
 
 echo "▶ B. Dock 아이콘 다시 누르기(reopen)"
