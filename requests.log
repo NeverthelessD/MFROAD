@@ -1,0 +1,75 @@
+11-18 06:08:22 [2606] GET  /api/ping              200     1ms 
+11-18 06:08:22 [2606] GET  /api/ping              200     0ms 
+11-18 06:08:22 [2606] GET  /api/ping              200     0ms 
+11-18 06:08:22 [2606] POST /api/nh/keys           400     1ms 
+11-18 06:08:23 [2606] 나무증권 토큰 새로 받음 · 키를 새로 넣음
+11-18 06:08:23 [2606] POST /api/nh/keys           200   286ms 
+11-18 06:08:23 [2606] 화면 열림 · Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) MFROADShell/1.0.6
+11-18 06:08:23 [2606] GET  /                      200     0ms 
+11-18 06:08:23 [2606] GET  /css/app.css           200     6ms 
+11-18 06:08:23 [2606] GET  /js/app.js             200    10ms 
+11-18 06:08:24 [2606] GET  /api/settings          200     0ms 
+11-18 06:08:24 [2606] GET  /api/portfolio         200     0ms 
+11-18 06:08:24 [2606] GET  /api/history           200     0ms 
+11-18 06:08:25 [2606] GET  /api/portfolio         200     0ms 
+11-18 06:08:25 [2606] GET  /api/portfolio         200     0ms 
+11-18 06:08:25 [2606] POST /api/account/save      200     0ms 
+11-18 06:08:25 [2606] POST /api/account/save      200     0ms 
+11-18 06:08:25 [2606] POST /api/lot/save          200     0ms 
+11-18 06:08:25 [2606] POST /api/lot/save          200     0ms 
+11-18 06:08:25 [2606] POST /api/lot/save          200     0ms 
+11-18 06:08:25 [2606] POST /api/lot/save          200     0ms 
+11-18 06:08:25 [2606] POST /api/lot/save          200     0ms 
+11-18 06:08:25 [2606] POST /api/lot/save          200     0ms 
+11-18 06:08:25 [2606] GET  /api/portfolio         200     0ms 
+11-18 06:08:26 [2606] GET  /api/portfolio         200     0ms 
+11-18 06:08:33 [2606] GET  /api/history           200     0ms 
+11-18 06:08:33 [2606] GET  /api/history           200     0ms 
+11-18 06:08:33 [2606] GET  /api/history           200     0ms 
+11-18 06:08:34 [2606] GET  /api/history           200     0ms 
+11-18 06:08:34 [2606] GET  /api/portfolio         200     0ms 
+11-18 06:08:34 [2606] POST /api/lot/sell          200     1ms 
+11-18 06:08:34 [2606] GET  /api/portfolio         200     0ms 
+11-18 06:08:35 [2606] GET  /api/portfolio         200     0ms 
+11-18 06:08:37 [2953] GET  /api/portfolio         200     0ms 
+11-18 06:08:39 [2953] GET  /api/ping              200     0ms 
+11-18 06:08:42 [2953] POST /api/quit              200     0ms 
+11-18 06:08:44 [3117] GET  /api/ping              200     0ms 
+11-18 06:08:44 [3117] 화면 열림 · Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) MFROADShell/1.0.6
+11-18 06:08:44 [3117] GET  /                      200     0ms 
+11-18 06:08:44 [3117] GET  /css/app.css           200     0ms 
+11-18 06:08:44 [3117] GET  /js/app.js             200     0ms 
+11-18 06:08:44 [3117] GET  /api/settings          200     0ms 
+11-18 06:08:44 [3117] GET  /api/portfolio         200     0ms 
+11-18 06:08:44 [3117] GET  /api/history           200     0ms 
+11-18 06:08:51 [3117] POST /api/quit              200     0ms 
+11-18 06:08:53 [3314] 화면 열림 · Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) MFROADShell/1.0.6
+11-18 06:08:53 [3314] GET  /                      200     0ms 
+11-18 06:08:53 [3314] GET  /css/app.css           200     0ms 
+11-18 06:08:53 [3314] GET  /js/app.js             200     0ms 
+11-18 06:08:53 [3314] GET  /api/settings          200     0ms 
+11-18 06:08:53 [3314] GET  /api/ping              200     0ms 
+11-18 06:08:55 [3437] GET  /api/ping              200     0ms 
+11-18 06:08:55 [3437] 화면 열림 · Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) MFROADShell/1.0.6
+11-18 06:08:55 [3437] GET  /                      200     0ms 
+11-18 06:08:55 [3437] GET  /css/app.css           200     0ms 
+11-18 06:08:55 [3437] GET  /js/app.js             200     0ms 
+11-18 06:08:55 [3437] GET  /api/settings          200     0ms 
+11-18 06:08:56 [3437] POST /api/update/restart    200     0ms 
+11-18 06:08:56 [3437] GET  /api/portfolio         200     0ms 
+11-18 06:08:56 [3437] GET  /api/history           200     0ms 
+11-18 06:08:56 [3462] 화면 열림 · Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) MFROADShell/1.0.6
+11-18 06:08:56 [3462] GET  /                      200     0ms 
+11-18 06:08:56 [3462] GET  /css/app.css           200     0ms 
+11-18 06:08:56 [3462] GET  /js/app.js             200     0ms 
+11-18 06:08:56 [3462] GET  /api/settings          200     0ms 
+11-18 06:08:56 [3462] GET  /api/portfolio         200     0ms 
+11-18 06:08:56 [3462] GET  /api/history           200     0ms 
+11-18 06:08:57 [3462] GET  /                      200     0ms 
+11-18 06:08:57 [3462] GET  /css/app.css           200     0ms 
+11-18 06:08:57 [3462] GET  /js/app.js             200     0ms 
+11-18 06:08:57 [3462] GET  /api/settings          200     0ms 
+11-18 06:08:57 [3462] GET  /api/portfolio         200     0ms 
+11-18 06:08:57 [3462] GET  /api/history           200     0ms 
+11-18 06:08:59 [3462] GET  /api/ping              200     0ms 
+11-18 06:08:59 [3462] POST /api/quit              200     0ms 
