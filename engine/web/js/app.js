@@ -137,6 +137,43 @@ function groupsOf(kind) {
   return out;
 }
 
+// 팔 때 수수료율(%) — 계좌에 고친 값이 있으면 그 값, 없으면 회사별 보통 온라인 수수료율 (2026년 기준, 이벤트로 더 낮을 수 있어요)
+const FEE_DEFAULTS = {
+  stock: { '나무증권': 0.01, '한국투자': 0.0140527, '키움': 0.015, '미래에셋': 0.014, '삼성증권': 0.015, '토스증권': 0.015, 'KB증권': 0.015, 'NH투자': 0.015 },
+  coin: { '업비트': 0.05, '빗썸': 0.04, '코인원': 0, '코빗': 0 },
+};
+function feeOf(a) {
+  if (!a) return 0;
+  if (typeof a.fee === 'number') return a.fee;
+  const t = FEE_DEFAULTS[a.kind] || {};
+  for (const k of Object.keys(t)) if ((a.name || '').startsWith(k)) return t[k];
+  return a.kind === 'coin' ? 0.05 : 0.015;
+}
+// 증권거래세(농특세 포함) 2026년: 코스피 · 코스닥 0.20%, ETF · ETN 없음, 코인 없음 — 엔진(sell.go)과 같은 계산
+function taxRateOf(kind, market) {
+  if (kind !== 'stock') return 0;
+  return ['ETF', 'ETN'].includes(String(market || '').toUpperCase()) ? 0 : 0.20;
+}
+function sellCalc(kind, market, q, p, feeRate) {
+  let gross = q * p;
+  if (kind === 'stock') gross = Math.round(gross);
+  const fee = Math.floor((gross * feeRate) / 100 + 1e-9);
+  const taxRate = taxRateOf(kind, market);
+  const tax = Math.floor((gross * taxRate) / 100 + 1e-9);
+  return { gross, fee, taxRate, tax, net: gross - fee - tax };
+}
+const pctText = (r) => `${Number(r.toFixed(7))}%`;
+const cashAccounts = (kind) => S.pf.accounts.filter((a) => a.kind === kind && a.cash > 0);
+const cashOf = (kind) => cashAccounts(kind).reduce((s, a) => s + a.cash, 0);
+const salesOf = (kinds) => (S.pf.sales || []).filter((x) => kinds.includes(x.kind));
+
+// 판 돈(현금)을 더해요: 총액 · '평균 단가 기준'에는 들어가고, 손익에는 영향이 없어요
+function withCash(t, kinds) {
+  const cash = kinds.reduce((s, k) => s + cashOf(k), 0);
+  const sales = salesOf(kinds);
+  return Object.assign(t, { cash, value: t.value + cash, cost: t.cost + cash, realized: sales.reduce((s, x) => s + x.realized, 0), nSales: sales.length });
+}
+
 function totalsOf(groups) {
   let value = 0, cost = 0, costPriced = 0, today = 0, missing = 0;
   for (const g of groups) {
@@ -154,12 +191,12 @@ function render() {
   $$('#tabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === S.tab)));
   renderNotices();
   const main = $('#main');
-  if (!S.pf.lots.length) { main.innerHTML = emptyHTML(); return; }
+  if (!S.pf.lots.length && !S.pf.accounts.some((a) => a.cash > 0)) { main.innerHTML = emptyHTML(); return; }
   const stocks = groupsOf('stock'), coins = groupsOf('coin');
-  const ts = totalsOf(stocks), tc = totalsOf(coins);
+  const ts = withCash(totalsOf(stocks), ['stock']), tc = withCash(totalsOf(coins), ['coin']);
   const show = (k) => S.tab === 'all' || S.tab === k;
   const visible = [...(show('stock') ? stocks : []), ...(show('coin') ? coins : [])];
-  const t = totalsOf(visible);
+  const t = withCash(totalsOf(visible), ['stock', 'coin'].filter(show));
   let html = `<section class="summary" aria-label="자산 요약">${totalHTML(t, ts, tc)}<div class="side">${miniHTML('stock', ts)}${miniHTML('coin', tc)}</div></section>`;
   html += `<section class="card holdings" aria-label="보유 종목">`;
   if (show('stock')) html += groupHTML('stock', stocks);
@@ -268,7 +305,7 @@ function applyHover() {
 function totalHTML(t, ts, tc) {
   const sum = ts.value + tc.value;
   const sp = sum > 0 ? (ts.value / sum) * 100 : 0;
-  const allocBar = sum > 0 && ts.n && tc.n ? `<div class="alloc">
+  const allocBar = ts.value > 0 && tc.value > 0 ? `<div class="alloc">
       <div class="bar"><span class="sw stock" style="width:${sp.toFixed(1)}%"></span><span class="sw coin" style="flex:1"></span></div>
       <div class="legend"><span><i class="sw stock"></i>국내주식 <b>${sp.toFixed(1)}%</b></span><span><i class="sw coin"></i>코인 <b>${(100 - sp).toFixed(1)}%</b></span></div>
     </div>` : '';
@@ -278,11 +315,13 @@ function totalHTML(t, ts, tc) {
     <div style="display:flex;flex-direction:column;gap:6px">
       <span class="label">${label}</span>
       <div class="amount"><span class="v">${won(t.value)}</span><span class="u">원</span></div>
-      <span class="base" title="산 가격(평균 단가) × 보유 수량을 모두 더한 금액이에요. 시세가 바뀌어도 그대로예요.">평균 단가 기준 <b>${won(t.cost)}원</b></span>
+      <span class="base" title="산 가격(평균 단가) × 보유 수량을 모두 더한 금액이에요${t.cash > 0 ? '(판 돈 포함)' : ''}. 시세가 바뀌어도 그대로예요.">평균 단가 기준 <b>${won(t.cost)}원</b></span>
     </div>
     <div class="chips">
       <span class="chip tint-${tone(t.pl) === 'down' ? 'down' : 'up'} ${tone(t.pl)}"><span class="k">총 손익</span>${sWon(t.pl)}원 (${sPct(t.plp)})</span>
       <span class="chip ${tone(t.today)}"><span class="k">오늘</span>${sWon(t.today)}원 (${sPct(t.todayP)})</span>
+      ${t.cash > 0 ? `<span class="chip" title="팔고 받은 돈(수수료 · 세금을 뺀 금액)이에요. 총 자산에 들어가 있어요."><span class="k">판 돈</span>${won(t.cash)}원</span>` : ''}
+      ${t.nSales ? `<span class="chip ${tone(t.realized)}" title="판 기록 ${t.nSales}건: 받은 금액 − 산 금액(평균 단가)"><span class="k">실현 손익</span>${sWon(t.realized)}원</span>` : ''}
       ${miss}
     </div>
     ${chartHTML()}
@@ -299,7 +338,8 @@ function miniHTML(kind, t) {
   return `<div class="card mini">
     <div class="head"><span class="title"><i class="sw ${kind}"></i>${kind === 'stock' ? '국내주식' : '코인'}</span><span class="tag">${esc(src)}</span></div>
     <div class="val"><span class="v">${won(t.value)}</span><span class="u">원</span></div>
-    <span class="pl ${tone(t.pl)}">${t.n ? `${sWon(t.pl)}원 · ${sPct(t.plp)}` : '아직 없어요'}</span>
+    <span class="pl ${tone(t.pl)}">${t.n ? `${sWon(t.pl)}원 · ${sPct(t.plp)}` : t.cash > 0 ? '' : '아직 없어요'}</span>
+    ${t.cash > 0 ? `<span class="s12 muted">판 돈 ${won(t.cash)}원 포함</span>` : ''}
   </div>`;
 }
 
@@ -311,12 +351,21 @@ function groupHTML(kind, groups) {
   const btn = kind === 'stock' && S.nh.configured
     ? `<button type="button" class="btn small" data-act="sync" ${S.nh.syncing ? 'disabled' : ''}>${S.nh.syncing ? '불러오는 중…' : '계좌 다시 불러오기'}</button>` : '';
   let html = `<div class="group"><div class="ghead"><div class="t"><h2>${title}</h2><span class="sub">${esc(sub)}</span></div>${btn}</div>`;
-  if (!groups.length) {
+  const cashes = cashAccounts(kind);
+  if (!groups.length && !cashes.length) {
     html += `<div class="hint" style="padding:0 20px 20px">아직 ${title}이 없어요. 오른쪽 위 '종목 추가'로 넣어 보세요.</div></div>`;
     return html;
   }
   html += `<div class="scroll"><div class="tbl"><div class="row thead"><span>${kind === 'stock' ? '종목' : '코인'}</span><span>현재가 (원)</span><span>보유 수량</span><span>평균 단가 (원)</span><span>평가 금액 (원)</span><span>손익</span></div>`;
   for (const g of groups) html += itemHTML(g);
+  for (const a of cashes) {
+    html += `<button type="button" class="row item cashrow" data-act="cash" data-acct="${esc(a.id)}">
+      <span class="name"><span class="badge cash">₩</span><span class="nm"><b>판 돈 (현금)</b><span>${esc(a.name)} · 팔고 받은 돈</span></span></span>
+      <span class="c"></span><span class="c"></span><span class="c"></span>
+      <span class="c"><span class="v15 b">${won(a.cash)}</span></span>
+      <span class="c nodata"><span class="s12">눌러서 고치기</span></span>
+    </button>`;
+  }
   html += `</div></div></div>`;
   return html;
 }
@@ -517,6 +566,7 @@ function openLot(opts = {}) {
     sel: editing ? { kind: editing.kind, code: editing.code, name: editing.name, market: editing.market } : null,
     quote: null, account: editing ? editing.account : null, newAcct: false,
     qty: editing ? String(editing.qty) : '', avg: editing ? String(editing.avg) : '',
+    useCash: true,
   };
   const auto = editing && editing.source === 'nh';
   const el = modal.open(`
@@ -548,9 +598,10 @@ function openLot(opts = {}) {
         <div class="sumbox"><div class="r"><span>보유 수량</span><span class="num b">${qty(editing.qty, editing.kind, editing.code)}</span></div>
         <div class="r"><span>평균 단가</span><span class="num b">${price(editing.avg, editing.kind)}원</span></div></div>
         <div class="hint">나무증권 계좌에서 자동으로 불러온 기록이에요. 나무증권에서 사고팔면 다음에 불러올 때 저절로 바뀌어요. 다른 증권사에서 산 같은 종목은 '종목 추가'로 따로 넣으면 합쳐서 보여 드려요.</div>
-        <div class="dfoot"><button type="button" class="btn primary" data-x2>닫기</button></div>`;
+        <div class="dfoot"><button type="button" class="btn" data-x2>닫기</button><button type="button" class="btn primary" data-sell style="min-width:120px">팔았어요</button></div>`;
       body.innerHTML = h;
       $('[data-x2]', body).onclick = () => modal.close();
+      $('[data-sell]', body).onclick = () => { modal.close(); openSell(editing); };
       return;
     }
     if (!editing) {
@@ -578,13 +629,14 @@ function openLot(opts = {}) {
       <div class="field wider"><label for="lotAvg" style="display:flex;justify-content:space-between;align-items:center">평균 매수가<button type="button" class="mini-link" data-fillprice ${D.sel ? '' : 'hidden'}>현재가로 채우기</button></label><div class="box"><input id="lotAvg" inputmode="decimal" autocomplete="off" value="${esc(fmtInput(D.avg))}" placeholder="0"><span class="u">원</span></div></div>
     </div>
     <div class="sumbox" id="lotSum"></div>
-    <div class="hint" id="lotMerge" hidden></div>`;
+    <div class="hint" id="lotMerge" hidden></div>
+    <label class="checkrow" id="lotCash" hidden><input type="checkbox" id="lotUseCash" ${D.useCash ? 'checked' : ''}><span></span></label>`;
     if (!editing && D.kind === 'stock') {
       h += S.nh.configured
         ? `<button type="button" class="btn dashed" data-nhsync>${ICON.down}나무증권 계좌에서 한 번에 불러오기</button>`
         : `<button type="button" class="btn dashed" data-nhsetup>${ICON.down}나무증권을 연결하면 계좌의 주식을 한 번에 불러와요</button>`;
     }
-    h += `<div class="dfoot">${editing ? '<button type="button" class="btn danger left" data-del>이 기록 지우기</button>' : ''}<button type="button" class="btn" data-cancel style="min-width:96px">취소</button><button type="button" class="btn primary" data-save style="min-width:120px">${editing ? '저장' : '추가하기'}</button></div>`;
+    h += `<div class="dfoot">${editing ? '<button type="button" class="btn danger left" data-del>이 기록 지우기</button>' : ''}<button type="button" class="btn" data-cancel style="min-width:96px">취소</button>${editing ? '<button type="button" class="btn" data-sell style="min-width:96px">팔았어요</button>' : ''}<button type="button" class="btn primary" data-save style="min-width:120px">${editing ? '저장' : '추가하기'}</button></div>`;
     body.innerHTML = h;
     bind();
     updateSum();
@@ -663,6 +715,15 @@ function openLot(opts = {}) {
         m.textContent = '고른 계좌에 이 종목 기록이 이미 있어요. 그 기록을 고치거나 다른 계좌를 골라 주세요.';
       } else m.hidden = true;
     }
+    const cb = $('#lotCash', body);
+    if (cb) {
+      const a = !editing && acctById(D.account);
+      cb.hidden = !(a && a.cash > 0);
+      if (!cb.hidden) {
+        const use = Math.min(a.cash, nq * na);
+        cb.lastElementChild.innerHTML = `이 계좌의 판 돈 <b>${won(a.cash)}원</b>에서 산 금액${use > 0 ? ` <b>${won(use)}원</b>` : ''}만큼 빼기 <span class="muted">(판 돈으로 다시 샀다면 켜 두세요)</span>`;
+      }
+    }
     const ok = D.sel && D.account && nq > 0 && !(ex && editing);
     const sv = $('[data-save]', body); if (sv) sv.disabled = !ok;
   }
@@ -724,6 +785,8 @@ function openLot(opts = {}) {
     if (fp) fp.onclick = () => { const p = curPrice(); if (p) { D.avg = String(p); $('#lotAvg', body).value = fmtInput(D.avg); updateSum(); } };
     $('[data-cancel]', body).onclick = () => modal.close();
     $('[data-save]', body).onclick = save;
+    const uc = $('#lotUseCash', body); if (uc) uc.onchange = () => { D.useCash = uc.checked; };
+    const sl = $('[data-sell]', body); if (sl) sl.onclick = () => { modal.close(); openSell(editing); };
     const del = $('[data-del]', body);
     if (del) del.onclick = async () => {
       const a = acctById(editing.account) || {};
@@ -747,7 +810,7 @@ function openLot(opts = {}) {
     if (!(nq > 0)) { toast('보유 수량을 넣어 주세요'); $('#lotQty', body).focus(); return; }
     const btn = $('[data-save]', body); btn.disabled = true;
     try {
-      const r = await api('/api/lot/save', { id: editing ? editing.id : '', kind: D.kind, code: D.sel.code, name: D.sel.name, market: D.sel.market || '', account: D.account, qty: nq, avg: na });
+      const r = await api('/api/lot/save', { id: editing ? editing.id : '', kind: D.kind, code: D.sel.code, name: D.sel.name, market: D.sel.market || '', account: D.account, qty: nq, avg: na, useCash: !editing && D.useCash && !$('#lotCash', body).hidden });
       rememberUI('lastAccount_' + D.kind, D.account);
       if (D.quote) { S.quotes[`${D.kind}:${D.sel.code}`] = D.quote; }
       await loadPortfolio();
@@ -760,6 +823,117 @@ function openLot(opts = {}) {
   draw();
   const qi = $('#lotQ', body);
   if (qi) qi.focus(); else { const i = $('#lotQty', body); if (i) i.focus(); }
+}
+
+// ---------------------------------------------------------------- 팔기
+
+function openSell(lot) {
+  const a = acctById(lot.account) || { name: '계좌', kind: lot.kind };
+  const q = quoteOf(lot.kind, lot.code);
+  const D = { qty: String(lot.qty), price: q ? String(q.price) : '', fee: String(feeOf(a)) };
+  const unit = lot.kind === 'stock' ? '주' : lot.code;
+  const taxRate = taxRateOf(lot.kind, lot.market);
+  const el = modal.open(`
+    <div class="dhead"><h1>팔았어요</h1><button type="button" class="x" data-x aria-label="닫기">${ICON.x}</button></div>
+    <div class="picked"><span class="badge ${lot.kind === 'coin' ? 'coin' : ''}">${esc(badgeOf(lot.name, lot.kind, lot.code))}</span><span class="nm"><b>${esc(lot.name || lot.code)}</b><span>${esc(a.name)} · ${qty(lot.qty, lot.kind, lot.code)} 보유 · 평단 ${price(lot.avg, lot.kind)}원</span></span></div>
+    <div class="two">
+      <div class="field"><label for="sQty" style="display:flex;justify-content:space-between;align-items:center">판 수량<span style="display:flex;gap:10px"><button type="button" class="mini-link" data-half>절반</button><button type="button" class="mini-link" data-all>전부</button></span></label><div class="box"><input id="sQty" inputmode="decimal" autocomplete="off" value="${esc(fmtInput(D.qty))}"><span class="u">${esc(unit)}</span></div></div>
+      <div class="field wider"><label for="sPrice" style="display:flex;justify-content:space-between;align-items:center">판 가격 (1${lot.kind === 'stock' ? '주' : '개'}당)<button type="button" class="mini-link" data-now ${q ? '' : 'hidden'}>현재가로 채우기</button></label><div class="box"><input id="sPrice" inputmode="decimal" autocomplete="off" value="${esc(fmtInput(D.price))}" placeholder="0"><span class="u">원</span></div></div>
+    </div>
+    <div class="field"><label for="sFee">${lot.kind === 'stock' ? '증권사' : '거래소'} 수수료율 · ${esc(a.name)}</label><div class="box" style="max-width:220px"><input id="sFee" inputmode="decimal" autocomplete="off" value="${esc(D.fee)}"><span class="u">%</span></div>
+      <span class="hint">${esc(a.name)}의 보통 수수료율을 넣어 두었어요. 이벤트로 수수료가 다르면 고쳐 주세요 — 고친 값은 이 계좌에서 계속 써요.</span></div>
+    <div class="sumbox" id="sSum"></div>
+    <div class="hint">받는 금액은 <b>${esc(a.name)}</b> 계좌의 <b>판 돈(현금)</b>으로 들어가서 총 자산에 그대로 남아요.${lot.source === 'nh' ? ' 나무증권 계좌의 주식 수량은 다음에 계좌를 불러올 때 실제 잔고로 맞춰져요.' : ''}</div>
+    <div class="dfoot"><button type="button" class="btn" data-cancel style="min-width:96px">취소</button><button type="button" class="btn primary" data-ok style="min-width:140px">판 기록 남기기</button></div>`, '');
+  $('[data-x]', el).onclick = $('[data-cancel]', el).onclick = () => modal.close();
+
+  function upd() {
+    const nq = parseNum(D.qty), np = parseNum(D.price), fr = parseFloat(D.fee);
+    const okFee = isFinite(fr) && fr >= 0 && fr <= 5;
+    const c = sellCalc(lot.kind, lot.market, nq, np, okFee ? fr : 0);
+    const real = c.net - nq * lot.avg;
+    const has = nq > 0 && np > 0;
+    $('#sSum', el).innerHTML = `<div class="r"><span>판 금액 (수량 × 판 가격)</span><span class="num b">${has ? won(c.gross) + '원' : '—'}</span></div>
+      <div class="r"><span>수수료 (${okFee ? pctText(fr) : '?'})</span><span class="num">${has ? '−' + won(c.fee) + '원' : '—'}</span></div>
+      ${lot.kind === 'stock' ? `<div class="r"><span>증권거래세 (${taxRate ? pctText(taxRate) : 'ETF · ETN 은 없어요'})</span><span class="num">${has ? '−' + won(c.tax) + '원' : '—'}</span></div>` : ''}
+      <div class="r"><span>받는 금액</span><span class="num big">${has ? won(c.net) + '원' : '—'}</span></div>
+      <div class="r"><span>실현 손익 (받는 금액 − 산 금액)</span><span class="num b ${tone(real)}">${has ? `${sWon(real)}원 (${sPct(lot.avg > 0 ? (real / (nq * lot.avg)) * 100 : 0)})` : '—'}</span></div>`;
+    let warn = '';
+    if (nq > lot.qty * (1 + 1e-9)) warn = '가지고 있는 수량보다 많아요';
+    else if (!okFee) warn = '수수료율은 0 ~ 5% 사이로 넣어 주세요';
+    if (warn) $('#sSum', el).insertAdjacentHTML('beforeend', `<div class="r"><span class="hint warn">${warn}</span></div>`);
+    $('[data-ok]', el).disabled = !has || !!warn;
+  }
+  for (const [id, k] of [['sQty', 'qty'], ['sPrice', 'price']]) {
+    const inp = $('#' + id, el);
+    inp.oninput = () => {
+      const raw = inp.value.replace(/[^0-9.]/g, '');
+      const fromEnd = inp.value.length - inp.selectionStart;
+      D[k] = raw; inp.value = fmtInput(raw);
+      const pos = Math.max(0, inp.value.length - fromEnd); inp.setSelectionRange(pos, pos);
+      upd();
+    };
+    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); (id === 'sQty' ? $('#sPrice', el) : $('#sFee', el)).focus(); } };
+  }
+  const fi = $('#sFee', el);
+  fi.oninput = () => { fi.value = fi.value.replace(/[^0-9.]/g, ''); D.fee = fi.value; upd(); };
+  fi.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } };
+  const setQty = (v) => { D.qty = String(v); $('#sQty', el).value = fmtInput(D.qty); upd(); };
+  $('[data-all]', el).onclick = () => setQty(lot.qty);
+  $('[data-half]', el).onclick = () => setQty(lot.kind === 'stock' ? Math.floor(lot.qty / 2) : Number((lot.qty / 2).toFixed(8)));
+  $('[data-now]', el).onclick = () => { const qq = quoteOf(lot.kind, lot.code); if (qq) { D.price = String(qq.price); $('#sPrice', el).value = fmtInput(D.price); upd(); } };
+  $('[data-ok]', el).onclick = save;
+
+  async function save() {
+    const btn = $('[data-ok]', el);
+    if (btn.disabled) return;
+    btn.disabled = true;
+    try {
+      const r = await api('/api/lot/sell', { lot: lot.id, qty: parseNum(D.qty), price: parseNum(D.price), feeRate: parseFloat(D.fee) });
+      await loadPortfolio(); render(); modal.close();
+      toast(`${lot.name || lot.code} 판 기록을 남겼어요 · 받은 금액 ${won(r.sale.net)}원`, 3500);
+    } catch (e) { toast(e.message, 3500); btn.disabled = false; }
+  }
+  upd();
+  const pi = $('#sPrice', el); pi.focus(); pi.select();
+}
+
+// 판 돈(현금) — 금액 고치기 · 판 기록 · 되돌리기
+function openCash(acctId) {
+  const el = modal.open(`<div class="dhead"><h1>판 돈 (현금)</h1><button type="button" class="x" data-x aria-label="닫기">${ICON.x}</button></div><div id="cashBody" style="display:contents"></div>`, '');
+  $('[data-x]', el).onclick = () => modal.close();
+  const body = $('#cashBody', el);
+  let val = '';
+  function draw() {
+    const a = acctById(acctId);
+    if (!a) { modal.close(); return; }
+    val = String(a.cash || 0);
+    const sales = (S.pf.sales || []).filter((x) => x.account === acctId).slice(-15).reverse();
+    const fmtD = (ms) => { const d = new Date(ms); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+    body.innerHTML = `<div class="hint" style="font-size:14px"><b>${esc(a.name)}</b> 계좌에서 팔고 받은 돈이에요(수수료 · 세금을 뺀 금액). 총 자산에 들어가 있어요.<br>돈을 빼서 다른 데 썼거나 금액이 다르면 여기서 맞춰 주세요.</div>
+      <div class="field"><label for="cashV">지금 남은 판 돈</label><div class="box" style="max-width:280px"><input id="cashV" inputmode="decimal" autocomplete="off" value="${esc(fmtInput(val))}"><span class="u">원</span></div></div>
+      ${sales.length ? `<div class="field"><span class="flabel">판 기록</span><div class="sales">${sales.map((x) => `<div class="sale">
+        <span class="nm"><b>${esc(x.name || x.code)}</b><span>${fmtD(x.at)} · ${qty(x.qty, x.kind, x.code)} × ${price(x.price, x.kind)}원 · 수수료 ${won(x.fee)}원${x.kind === 'stock' ? ` · 세금 ${won(x.tax)}원` : ''}</span></span>
+        <span class="amt"><span class="v15 b">${won(x.net)}원</span><span class="s12 ${tone(x.realized)}">${sWon(x.realized)}원</span></span>
+        <button type="button" class="btn small ghost" data-undo="${esc(x.id)}">되돌리기</button></div>`).join('')}</div></div>` : ''}
+      <div class="dfoot"><button type="button" class="btn left" data-zero>0원으로 (다 뺐어요)</button><button type="button" class="btn" data-cancel style="min-width:96px">닫기</button><button type="button" class="btn primary" data-save style="min-width:110px">저장</button></div>`;
+    const inp = $('#cashV', body);
+    inp.oninput = () => { const raw = inp.value.replace(/[^0-9.]/g, ''); val = raw; inp.value = fmtInput(raw); };
+    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); setCash(parseNum(val)); } };
+    $('[data-cancel]', body).onclick = () => modal.close();
+    $('[data-save]', body).onclick = () => setCash(parseNum(val));
+    $('[data-zero]', body).onclick = () => setCash(0);
+    $$('[data-undo]', body).forEach((b) => b.onclick = async () => {
+      const x = sales.find((y) => y.id === b.dataset.undo);
+      if (!x) return;
+      if (!(await confirmBox('판 기록을 되돌릴까요?', `${esc(x.name || x.code)} ${esc(qty(x.qty, x.kind, x.code))}을(를) 다시 보유한 것으로 되돌리고, 판 돈에서 ${won(x.net)}원을 빼요.`, '되돌리기', true))) return;
+      try { await api('/api/sale/undo', { id: x.id }); await loadPortfolio(); render(); draw(); toast('판 기록을 되돌렸어요'); } catch (e) { toast(e.message); }
+    });
+  }
+  async function setCash(v) {
+    try { await api('/api/cash/set', { account: acctId, cash: v }); await loadPortfolio(); render(); modal.close(); toast(v > 0 ? '판 돈을 맞췄어요' : '판 돈을 0원으로 했어요'); } catch (e) { toast(e.message); }
+  }
+  draw();
 }
 
 // ---------------------------------------------------------------- 설정
@@ -1058,7 +1232,8 @@ document.addEventListener('click', async (e) => {
   } else if (act === 'edit') {
     const lot = S.pf.lots.find((l) => l.id === t.dataset.lot);
     if (lot) openLot({ lot });
-  } else if (act === 'add') openLot();
+  } else if (act === 'cash') openCash(t.dataset.acct);
+  else if (act === 'add') openLot();
   else if (act === 'settings') openSettings('nh');
   else if (act === 'update') openUpdate(false);
   else if (act === 'restart') restartApp();

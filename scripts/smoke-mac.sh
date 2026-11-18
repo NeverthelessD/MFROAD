@@ -107,6 +107,10 @@ screencapture -x "$OUT/shot-app.png"
 check "L4 화면이 앱 창(WKWebView)에서 열림" grep -q "MFROADShell" "$SUP/requests.log"
 HR=$(for r in day week month year; do api "/api/history?range=$r" | json "d['range']"; done | tr '\n' ' ')
 check "H1 자산 그래프 기간(오늘 · 주간 · 월간 · 연간)을 엔진이 알아들음 ($HR)" test "$HR" = "day week month year "
+XLOT=$(api /api/portfolio | json "[l['id'] for l in d['lots'] if l['code']=='XRP'][0]")
+SN=$(post /api/lot/sell "{\"lot\":\"$XLOT\",\"qty\":300,\"price\":3200,\"feeRate\":0.05}" | json "d['sale']['net']")
+SC=$(api /api/portfolio | json "[a.get('cash',0) for a in d['accounts'] if a['id']=='$CAC'][0]")
+check "S1 코인을 팔면 수수료를 빼고 판 돈(현금)으로 들어감 (${SN} · ${SC})" python3 -c "import sys; sys.exit(0 if float('${SN:-0}')==959520 and float('${SC:-0}')==959520 else 1)"
 T1=$(tokens_issued)
 
 echo "▶ B. Dock 아이콘 다시 누르기(reopen)"

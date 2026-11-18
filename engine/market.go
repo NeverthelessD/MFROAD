@@ -363,8 +363,10 @@ func (a *App) historyLoop() {
 // totalValue: 모든 보유 종목의 시세가 있을 때만 국내주식 · 코인 금액을 계산해요
 func (a *App) totalValue() (stock, coin float64, ok bool) {
 	pf := a.pf.Snapshot()
+	// 판 돈(계좌 현금)도 총 자산에 들어가요
+	stock, coin = pf.CashBy()
 	if len(pf.Lots) == 0 {
-		return 0, 0, false
+		return stock, coin, stock+coin > 0
 	}
 	for _, l := range pf.Lots {
 		q := a.mk.Get(l.Kind, l.Code)

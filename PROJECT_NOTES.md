@@ -53,6 +53,15 @@ My Finance ROAD. 국내주식 · 코인 자산 확인 앱. macOS (Apple Silicon)
   '○월 ○일 이후 ±금액(%)' · 아래 날짜(시작 · N일치 기록 · 오늘) · 마우스를 올리면 그때 금액. 1.0.4 까지의 점에는 s/c 가 없어 국내주식/코인 탭은 이번 버전부터 쌓임.
   go test TestHistoryRanges · 맥 시험 H1 추가. 리눅스에서 가짜 기록(200일)으로 라이트/다크/좁은 창 스크린샷 확인.
   → 맥 빌드 서버 build=ok · smoke=ok (31개 통과) → v1.0.5 릴리스.
+- 2026-11-18 v1.0.6 — 사용자 요청: 주식 · 코인을 **팔았을 때** 판 가격을 넣고, 회사 수수료(+주식은 증권거래세)를 뺀 받은 금액이 총 자산에 남도록.
+  엔진 `sell.go`: `/api/lot/sell`(기록 id · 수량 · 판 가격 · 수수료율%) → 수량을 빼고(다 팔면 기록 없어짐) 받은 금액을 **계좌 현금(Account.Cash = '판 돈')**에 더함,
+  판 기록 Sale(판 금액 · 수수료 · 세금 · 받은 금액 · 실현 손익)을 portfolio.json `sales` 에 남김(최대 2000). `/api/sale/undo`(되돌리기) · `/api/cash/set`(판 돈 직접 맞추기).
+  수수료 · 세금은 원 단위 아래 버림. 증권거래세 0.20%(2026 코스피 0.05%+농특세 0.15% · 코스닥 0.20%), ETF · ETN · 코인은 없음.
+  수수료율은 계좌마다 기억(Account.Fee). 처음 값은 화면의 FEE_DEFAULTS(회사 이름으로 찾음): 나무증권 0.01 · 한국투자 0.0140527 · 미래에셋 0.014 · 그 밖의 증권사 0.015 ·
+  업비트 0.05 · 빗썸 0.04(쿠폰) · 코인원 0 · 코빗 0 (2026-11 기준, 이벤트로 다를 수 있어 팔기 창에서 고칠 수 있음).
+  totalValue · 화면 합계에 판 돈 포함(총 자산 · 평균 단가 기준에 들어가고 손익은 그대로), '판 돈' · '실현 손익' 칩, 표 아래 '판 돈 (현금)' 줄(누르면 금액 맞추기 · 판 기록 · 되돌리기).
+  종목 추가 때 그 계좌에 판 돈이 있으면 '판 돈에서 산 금액만큼 빼기'(기본 켬, useCash). 나무증권 자동 계좌도 팔기 가능(수량은 다음 불러오기 때 실제 잔고로 맞춰짐).
+  go test TestSellFeesCashAndUndo · 맥 시험 S1 추가. 리눅스 Playwright 로 팔기(주식 · ETF · 코인) · 판 돈 창 · 판 돈으로 사기 확인.
 
 ## 결정 사항
 
@@ -73,6 +82,7 @@ My Finance ROAD. 국내주식 · 코인 자산 확인 앱. macOS (Apple Silicon)
 - 데이터: `~/Library/Application Support/MFROAD/` — portfolio.json(계좌 · 기록), settings.json, history/YYYY-MM-DD.json(총자산 1분 기록 v·s·c, 8일치) · history/daily.json(하루 한 점, 계속 보관),
   cache/(종목 마스터 · 업비트 마켓 목록, 12시간), 기록 파일들(launcher.log · requests.log · engine.log …).
 - 업데이트: 이 저장소의 `releases/latest.json` 을 켤 때 + 6시간마다 확인, 자동 설치(기본 켬), 수동 '업데이트 확인', 버전 표시, 이전 버전 되돌리기.
+- **팔기**: 판 가격을 사용자가 넣고, 받은 금액(판 금액 − 회사 수수료 − 증권거래세)은 그 계좌의 '판 돈(현금)'으로 총 자산에 남김 (2026-11-18 사용자 요청).
 - 자산 변동 그래프: 실제로 적은 값만 씀(과거 시세로 추정해 채우지 않음 — 2026-11-11 사용자 선택). 앱이 꺼져 있던 동안은 앞뒤 점을 선으로 이음.
   기간 변동은 그래프 첫 점 → 마지막 점 금액 차이(종목을 새로 넣거나 빼면 그만큼 함께 바뀜).
 - 화면 모드: 맥 설정 따름(기본) / 라이트 / 다크. 화면 아래 `made by. Nevertheless_D`.
@@ -109,6 +119,7 @@ engine/secrets.go      키체인(/usr/bin/security, 표준 입력 + 16진수) ·
 engine/master.go       종목 마스터 m_new_stock.mst(237바이트 · CP949) 12시간 캐시 · 검색(이름 · 초성 · 코드 · 영문) · 전일 종가
 engine/upbit.go        업비트 마켓 목록(12시간) · 현재가(한 번에 여러 개) · 검색
 engine/history.go      history/YYYY-MM-DD.json (1분 한 점, 8일) · daily.json (하루 한 점, 영구) · Range(day/week/month/year)
+engine/sell.go         팔기(수수료 · 증권거래세 → 받은 금액을 계좌 현금 '판 돈'에) · 판 기록 되돌리기 · 판 돈 맞추기
 engine/api.go          /api/search · /api/quote · /api/nh/keys · forget · test · sync
 engine/update.go       releases/latest.json → zip · sha256 · version.txt · 백업 · 되돌리기 · restart-requested
 engine/web/            index.html · css/app.css(디자인 토큰) · js/app.js(화면 전체) · fonts/(IBM Plex Sans KR 4굵기 · Space Grotesk)

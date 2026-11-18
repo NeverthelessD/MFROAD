@@ -442,3 +442,77 @@ func TestHistoryRanges(t *testing.T) {
 		t.Fatalf("thin: %d", len(th))
 	}
 }
+
+// ---------------------------------------------------------------- 팔기 · 판 돈
+
+func TestSellFeesCashAndUndo(t *testing.T) {
+	dir := t.TempDir()
+	p := NewPortfolio(dir)
+	ac, _ := p.SaveAccount(Account{Name: "한국투자", Kind: "stock"})
+	cc, _ := p.SaveAccount(Account{Name: "업비트", Kind: "coin"})
+	st, _, _ := p.SaveLot(Lot{Kind: "stock", Code: "005930", Name: "삼성전자", Market: "KOSPI", Account: ac.ID, Qty: 10, Avg: 70000})
+	etf, _, _ := p.SaveLot(Lot{Kind: "stock", Code: "069500", Name: "KODEX 200", Market: "ETF", Account: ac.ID, Qty: 5, Avg: 30000})
+	co, _, _ := p.SaveLot(Lot{Kind: "coin", Code: "BTC", Name: "비트코인", Account: cc.ID, Qty: 0.5, Avg: 100000000})
+
+	// 주식 4주를 80,000원에: 320,000 − 수수료 0.015%(48) − 세금 0.20%(640) = 319,312
+	fee := 0.015
+	s, err := p.Sell(SellInput{LotID: st.ID, Qty: 4, Price: 80000, FeeRate: &fee})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.Gross != 320000 || s.Fee != 48 || s.Tax != 640 || s.Net != 319312 || s.Realized != 319312-280000 {
+		t.Fatalf("stock sale %+v", s)
+	}
+	d := p.Snapshot()
+	if d.Lots[0].Qty != 6 || d.Accounts[0].Cash != 319312 || d.Accounts[0].Fee == nil || *d.Accounts[0].Fee != 0.015 {
+		t.Fatalf("after stock sale %+v %+v", d.Lots[0], d.Accounts[0])
+	}
+	// ETF 는 증권거래세 없음, 계좌에 기억된 수수료율을 씀
+	s2, err := p.Sell(SellInput{LotID: etf.ID, Qty: 5, Price: 31000})
+	if err != nil || s2.Tax != 0 || s2.Fee != 23 || s2.Net != 155000-23 {
+		t.Fatalf("etf sale %+v %v", s2, err)
+	}
+	if len(p.Snapshot().Lots) != 2 {
+		t.Fatal("다 판 기록은 없어져야 해요")
+	}
+	// 코인 0.1개를 120,000,000원에, 0.05%: 12,000,000 − 6,000 = 11,994,000
+	cf := 0.05
+	s3, err := p.Sell(SellInput{LotID: co.ID, Qty: 0.1, Price: 120000000, FeeRate: &cf})
+	if err != nil || s3.Tax != 0 || s3.Fee != 6000 || s3.Net != 11994000 {
+		t.Fatalf("coin sale %+v %v", s3, err)
+	}
+	if _, err := p.Sell(SellInput{LotID: co.ID, Qty: 1, Price: 1}); err == nil {
+		t.Fatal("가진 것보다 많이 팔면 안 돼요")
+	}
+	stc, coc := p.Snapshot().CashBy()
+	if stc != 319312+154977 || coc != 11994000 {
+		t.Fatalf("cash %v %v", stc, coc)
+	}
+	// 되돌리기: 다 판 ETF 기록이 다시 생기고 현금이 빠져요
+	if err := p.UndoSale(s2.ID); err != nil {
+		t.Fatal(err)
+	}
+	d = p.Snapshot()
+	found := false
+	for _, l := range d.Lots {
+		if l.Code == "069500" && l.Qty == 5 && l.Avg == 30000 {
+			found = true
+		}
+	}
+	if !found || d.Accounts[0].Cash != 319312 || len(d.Sales) != 2 {
+		t.Fatalf("undo %+v", d)
+	}
+	// 판 돈으로 다시 사기 · 직접 맞추기 · 다시 열어도 그대로
+	p.SpendCash(ac.ID, 100000)
+	if p.Snapshot().Accounts[0].Cash != 219312 {
+		t.Fatal("spend")
+	}
+	if err := p.SetCash(cc.ID, 0); err != nil {
+		t.Fatal(err)
+	}
+	p2 := NewPortfolio(dir)
+	d2 := p2.Snapshot()
+	if d2.Accounts[0].Cash != 219312 || d2.Accounts[1].Cash != 0 || len(d2.Sales) != 2 {
+		t.Fatalf("reload %+v", d2)
+	}
+}

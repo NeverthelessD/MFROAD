@@ -26,6 +26,33 @@ type Account struct {
 	Kind   string `json:"kind"`             // stock | coin
 	Source string `json:"source,omitempty"` // "" (직접 입력) | nh (나무증권에서 자동)
 	Ext    string `json:"ext,omitempty"`    // 나무증권 계좌번호
+	// Cash: 이 계좌에서 판 돈(수수료 · 세금을 뺀 받은 금액)을 모아 둔 현금. 총 자산에 들어가요.
+	Cash float64 `json:"cash,omitempty"`
+	// Fee: 이 계좌(증권사 · 거래소)의 매도 수수료율(%). nil 이면 화면이 회사별 기본값을 써요.
+	Fee *float64 `json:"fee,omitempty"`
+}
+
+// Sale: 판 기록 — 받은 금액(Net)이 계좌 현금으로 들어가요.
+type Sale struct {
+	ID       string  `json:"id"`
+	At       int64   `json:"at"`
+	Kind     string  `json:"kind"`
+	Code     string  `json:"code"`
+	Name     string  `json:"name"`
+	Market   string  `json:"market,omitempty"`
+	Account  string  `json:"account"`
+	Qty      float64 `json:"qty"`
+	Price    float64 `json:"price"`    // 판 가격(1주 · 1개)
+	Avg      float64 `json:"avg"`      // 그때 평균 단가
+	Gross    float64 `json:"gross"`    // 판 금액 = 수량 × 판 가격
+	FeeRate  float64 `json:"feeRate"`  // %
+	Fee      float64 `json:"fee"`      // 증권사 · 거래소 수수료(원)
+	TaxRate  float64 `json:"taxRate"`  // %
+	Tax      float64 `json:"tax"`      // 증권거래세(원)
+	Net      float64 `json:"net"`      // 받은 금액 = 판 금액 − 수수료 − 세금
+	Realized float64 `json:"realized"` // 실현 손익 = 받은 금액 − 수량 × 평균 단가
+	LotID    string  `json:"lotId,omitempty"`
+	Source   string  `json:"source,omitempty"`
 }
 
 type Lot struct {
@@ -45,6 +72,7 @@ type PortfolioData struct {
 	V        int       `json:"v"`
 	Accounts []Account `json:"accounts"`
 	Lots     []Lot     `json:"lots"`
+	Sales    []Sale    `json:"sales"`
 	Rev      int64     `json:"rev"`
 }
 
@@ -56,7 +84,7 @@ type Portfolio struct {
 
 func NewPortfolio(support string) *Portfolio {
 	p := &Portfolio{path: filepath.Join(support, "portfolio.json")}
-	p.d = PortfolioData{V: 1, Accounts: []Account{}, Lots: []Lot{}}
+	p.d = PortfolioData{V: 1, Accounts: []Account{}, Lots: []Lot{}, Sales: []Sale{}}
 	if b, err := os.ReadFile(p.path); err == nil {
 		var d PortfolioData
 		if json.Unmarshal(b, &d) == nil {
@@ -65,6 +93,9 @@ func NewPortfolio(support string) *Portfolio {
 			}
 			if d.Lots == nil {
 				d.Lots = []Lot{}
+			}
+			if d.Sales == nil {
+				d.Sales = []Sale{}
 			}
 			d.V = 1
 			p.d = d
@@ -92,6 +123,7 @@ func (p *Portfolio) Snapshot() PortfolioData {
 	d := p.d
 	d.Accounts = append([]Account{}, p.d.Accounts...)
 	d.Lots = append([]Lot{}, p.d.Lots...)
+	d.Sales = append([]Sale{}, p.d.Sales...)
 	return d
 }
 
@@ -199,6 +231,13 @@ func (p *Portfolio) DeleteAccount(id string) error {
 		}
 	}
 	p.d.Lots = lots
+	sales := p.d.Sales[:0]
+	for _, x := range p.d.Sales {
+		if x.Account != id {
+			sales = append(sales, x)
+		}
+	}
+	p.d.Sales = sales
 	return p.saveLocked()
 }
 
@@ -341,11 +380,16 @@ func (p *Portfolio) ReplaceNH(acctNo string, lots []Lot) {
 // ---------------------------------------------------------------- API
 
 func (a *App) handleLotSave(w http.ResponseWriter, r *http.Request) {
-	var in Lot
-	if err := readJSON(r, &in); err != nil {
+	var req struct {
+		Lot
+		UseCash bool `json:"useCash"` // 새로 산 금액만큼 그 계좌의 판 돈(현금)에서 빼기
+	}
+	if err := readJSON(r, &req); err != nil {
 		jsonError(w, 400, "bad request")
 		return
 	}
+	in := req.Lot
+	isNew := in.ID == ""
 	if in.Kind == "stock" {
 		if s := a.master.Lookup(strings.ToUpper(strings.TrimSpace(in.Code))); s != nil {
 			if in.Name == "" {
@@ -363,6 +407,9 @@ func (a *App) handleLotSave(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		jsonError(w, 400, err.Error())
 		return
+	}
+	if req.UseCash && isNew {
+		a.pf.SpendCash(in.Account, in.Qty*in.Avg)
 	}
 	a.mk.Wake()
 	writeJSON(w, map[string]any{"ok": true, "lot": lot, "merged": merged, "rev": a.pf.Rev()})
@@ -404,4 +451,12 @@ func (a *App) handleAccountDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, map[string]any{"ok": true, "rev": a.pf.Rev()})
+}
+
+// SpendCash: 새로 산 금액만큼 계좌 현금에서 빼요
+func (p *Portfolio) SpendCash(acctID string, amount float64) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.spendCashLocked(acctID, amount)
+	p.saveLocked()
 }
